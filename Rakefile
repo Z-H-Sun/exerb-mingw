@@ -4,7 +4,7 @@ require 'rake/clean'
 
 SUPPORTED_VERSIONS = {
   "1.8.6" => 383,
-  "1.8.7" => 174,
+  "1.8.7" => 330,
   #"1.9.1" => 243,
 }
 
