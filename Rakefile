@@ -60,7 +60,7 @@ C.cc = "#{c['CC'] || 'gcc'}"
 C.cflags = "#{c['CFLAGS'] || '-Os'}"
 C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
 C.exerb_cflags = "#{EXERB_CFLAGS[RUBY_VERSION]}"
-C.cppflags = "#{c['CPPFLAGS']}"
+C.cppflags = "#{c['CPPFLAGS']} -static-libgcc"
 C.incflags = "-Isrc/mingw"
 if c['rubyhdrdir']
   C.incflags = "#{C.incflags} -I#{c['rubyhdrdir']}/#{c['arch']} -I#{c['rubyhdrdir']}" if c['rubyhdrdir']
@@ -70,7 +70,7 @@ end
 C.ldflags = "-L#{c['libdir']}"
 C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack,0x02000000'}"
 C.rubylib = "#{c['LIBRUBYARG_STATIC']}"
-C.libs = "#{c['LIBS']} -lstdc++"
+C.libs = "#{c['LIBS']}"
 C.ver = RUBY_VERSION.gsub('.','')
 C.src_dir = "src/mingw#{C.ver}"
 
@@ -120,7 +120,7 @@ end
 
 def link_cpp(target, options)
   sources = options[:sources]
-  cc = C.cc
+  cc = 'g++'
   cflags = "#{C.cflags} #{C.xcflags} #{C.exerb_cflags} #{C.cppflags} #{C.incflags}"
   ldflags = "#{C.ldflags} #{C.xldflags}"
   dllflags = options[:isdll] ? "-shared" : ""
