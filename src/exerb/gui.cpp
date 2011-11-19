@@ -123,14 +123,19 @@ dialog_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 		case WM_INITDIALOG:
 			if ( lparam ) {
 				const VALUE errinfo       = (VALUE)lparam;
-				const VALUE message       = ::rb_funcall(errinfo, ::rb_intern("message"), 0);
-				const VALUE message_str   = ::rb_funcall(message, ::rb_intern("gsub"), 2, ::rb_str_new2("\n"), ::rb_str_new2("\r\n"));
-				const VALUE backtrace     = ::rb_funcall(errinfo, ::rb_intern("backtrace"), 0);
-				const VALUE backtrace_str = ::rb_str_concat(::rb_ary_join(backtrace, ::rb_str_new2("\r\n")), rb_str_new2("\r\n"));
+				const VALUE message       = ::rb_funcall(errinfo, rb_intern("message"), 0);
+				const VALUE message_str   = ::rb_funcall(message, rb_intern("gsub"), 2, rb_str_new2("\n"), rb_str_new2("\r\n"));
+				const VALUE backtrace     = ::rb_funcall(errinfo, rb_intern("backtrace"), 0);
+				const VALUE backtrace_str = ::rb_str_concat(::rb_ary_join(backtrace, rb_str_new2("\r\n")), rb_str_new2("\r\n"));
 
 				::SetDlgItemText(hwnd, IDC_EDIT_TYPE,      ::rb_obj_classname(errinfo));
+#ifdef RUBY19
+				::SetDlgItemText(hwnd, IDC_EDIT_MESSAGE,   rb_string_value_ptr((volatile VALUE*) &message_str));
+				::SetDlgItemText(hwnd, IDC_EDIT_BACKTRACE, rb_string_value_ptr((volatile VALUE*) &backtrace_str));
+#else
 				::SetDlgItemText(hwnd, IDC_EDIT_MESSAGE,   STR2CSTR(message_str));
 				::SetDlgItemText(hwnd, IDC_EDIT_BACKTRACE, STR2CSTR(backtrace_str));
+#endif        
 			}
 
 			{

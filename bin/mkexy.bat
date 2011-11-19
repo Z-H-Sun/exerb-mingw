@@ -1,7 +1,7 @@
 @echo off
 "%~dp0ruby" -x "%~f0" %*
 goto endofruby
-#! C:/Users/gthiesfeld/.pik/rubies/Ruby-187-p330/bin/ruby.exe
+#! G:/Ruby193/bin/ruby.exe
 
 #==============================================================================#
 # $Id: mkexy,v 1.4 2008/06/13 23:54:45 arton Exp $

@@ -50,7 +50,7 @@ rb_exerbruntime_s_filepath(VALUE self)
 {
 	char filepath[MAX_PATH] = "";
 	::exerb_get_self_filepath(filepath, sizeof(filepath));
-	return ::rb_str_new2(filepath);
+	return rb_str_new2(filepath);
 }
 
 static VALUE
@@ -58,22 +58,26 @@ rb_exerbruntime_s_filename(VALUE self)
 {
 	char filepath[MAX_PATH] = "";
 	const char *filename = ::exerb_get_self_filepath(filepath, sizeof(filepath));
-	return ::rb_str_new2(filename);
+	return rb_str_new2(filename);
 }
 
 static VALUE
 rb_exerbruntime_s_open(VALUE self, VALUE filename)
 {
+#ifdef RUBY19
+  SafeStringValue(filename);
+#else
 	::Check_SafeStr(filename);
+#endif  
 	::rb_require("stringio");
 
 	NAME_ENTRY_HEADER *name_entry = ::exerb_find_name_entry(RSTRING_PTR(filename));
 	if ( !name_entry ) ::rb_raise(rb_eLoadError, "No such file to load -- %s", RSTRING_PTR(filename));
 
 	FILE_ENTRY_HEADER *file_entry = ::exerb_find_file_entry(name_entry->id);
-	VALUE file = ::rb_str_new(::exerb_get_file_from_entry(file_entry), file_entry->size_of_file);
+	VALUE file = rb_str_new(::exerb_get_file_from_entry(file_entry), file_entry->size_of_file);
 
-	return ::rb_funcall(::rb_path2class("StringIO"), ::rb_intern("new"), 2, file, ::rb_str_new2("r"));
+	return ::rb_funcall(::rb_path2class("StringIO"), rb_intern("new"), 2, file, rb_str_new2("r"));
 }
 
 static VALUE
@@ -84,7 +88,7 @@ rb_exerbruntime_s_load_string(VALUE self, VALUE id)
 
 	for ( int i = 0; i < g_loaded_resource_count; i++ ) {
 		if ( ::LoadString(g_loaded_resource_table[i], (unsigned int)res_id, buffer, sizeof(buffer)) ) {
-			return ::rb_str_new2(buffer);
+			return rb_str_new2(buffer);
 		}
 	}
 

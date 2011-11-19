@@ -27,7 +27,7 @@ exerb_strdup(const char* str)
 HANDLE
 exerb_fopen_for_read(const char *filepath)
 {
-	HANDLE file = ::CreateFile(filepath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+	HANDLE file = ::CreateFile(filepath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if ( file == INVALID_HANDLE_VALUE ) ::exerb_raise_runtime_error(::GetLastError());
 
 	return file;
@@ -36,7 +36,7 @@ exerb_fopen_for_read(const char *filepath)
 HANDLE
 exerb_fopen_for_write(const char *filepath)
 {
-	HANDLE file = ::CreateFile(filepath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, NULL, NULL);
+	HANDLE file = ::CreateFile(filepath, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if ( file == INVALID_HANDLE_VALUE ) ::exerb_raise_runtime_error(::GetLastError());
 
 	return file;

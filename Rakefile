@@ -13,16 +13,19 @@ SUPPORTED_VERSIONS = {
   "1.8.6" => 383,
   "1.8.7" => 330,
   # "1.9.2" => 136,
+  "1.9.3" => 0,
 }
 
 NEEDS_PATCHING = {
   "1.8.6" => ["eval.c", "variable.c"],
   "1.8.7" => ["eval.c", "variable.c"],
   # "1.9.2" => ["encoding.c", "load.c", "variable.c"],
+  "1.9.3" => ["variable.c", "transcode.c", "encoding.c", "load.c"],
 }
 
 EXERB_CFLAGS = {
   "1.9.2" => "-DRUBY19",
+  "1.9.3" => "-DRUBY19",  
 }
 
 RUBY_SRC_DIR = nil
@@ -30,6 +33,7 @@ RUBY_SRC_MISSING = {
   "1.8.6" => ["fileblocks.c", "crypt.c", "flock.c"],
   "1.8.7" => ["fileblocks.c", "crypt.c", "flock.c"],
   # "1.9.2" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c"],
+  "1.9.3" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c"],
 }
 RUBY_SRC_IGNORE = [
   # 1.8
@@ -56,6 +60,7 @@ RUBY_SRC_IGNORE = [
 
 C = OpenStruct.new
 c = RbConfig::CONFIG
+c['CFLAGS'] = ' -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings -Werror=declaration-after-statement '
 C.cc = "#{c['CC'] || 'gcc'}"
 C.cflags = "#{c['CFLAGS'] || '-Os'}"
 C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
@@ -89,9 +94,9 @@ def patch_rb_require(target, source)
         # change require
         #    return rb_require_safe(fname, ruby_safe_level);
         #    return exerb_require(fname);
-        m = /\A(\s*return\s*)(rb_require_safe)([^,]+).+\Z/.match(i)
+        m = /\A(\s*return\s*)(rb_require_safe)(.+)\Z/.match(i)
         if m
-          dst.puts "#{m[1]}exerb_require#{m[3]});"
+          dst.puts "#{m[1]}exerb_require_safe#{m[3]}"
         else
           dst.puts i
         end
@@ -150,6 +155,8 @@ def make_def_proxy(target, source, proxy)
         case line
         when /\A\s*(LIBRARY|EXPORTS)/
           out.puts line
+  		when /\A(\s*)(\w+@\w+)(\s+@.*)\Z/
+    	  out.puts "#{$1}#{$2} = #{proxy}.#{$2}#{$3}"
         when /\A(\s*)(\w+)(\s+@.*)\Z/
           out.puts "#{$1}#{$2} = #{proxy}.#{$2}#{$3}"
         else
