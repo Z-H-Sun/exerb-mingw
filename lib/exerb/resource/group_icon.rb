@@ -1,6 +1,6 @@
 
 #==============================================================================#
-# $Id: group_icon.rb,v 1.8 2005/05/05 02:26:29 yuya Exp $
+# $Id: group_icon.rb,v 1.9 2010/06/26 03:13:36 arton Exp $
 #==============================================================================#
 
 require 'exerb/win32/struct/icon_header'
@@ -56,8 +56,11 @@ class Exerb::Resource::GroupIcon < Exerb::Resource::Base
 
     def pack
       case @bit_count
+      when 1 then cc, bc = 2, 1
       when 4 then cc, bc = 16, 4
       when 8 then cc, bc =  0, 8
+      when 24 then cc, bc = 0, 24
+      when 32 then cc, bc =  0, 32
       else raise "invalid bit count -- #{@bit_count}"
       end
 

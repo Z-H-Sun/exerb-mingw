@@ -408,6 +408,9 @@ exerb_find_file_inside(const VALUE filename, WORD *id, VALUE *feature, VALUE *re
 			*realname = rb_str_new2(name);
 			return true;
 		} else if ( ::exerb_cmp_filename_with_ext(name, fname, "dll") ) {
+			FILE_ENTRY_HEADER* file_entry = ::exerb_find_file_entry(name_entry->id);
+			if (file_entry->type_of_file != FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY) continue;
+
 			*id       = name_entry->id;
 			*feature  = rb_str_concat(rb_str_new2(fname), rb_str_new2(".so"));
 			*realname = rb_str_new2(name);

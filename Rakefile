@@ -183,7 +183,7 @@ def zip(*enums)
   r
 end
 
-exerb_dll_base        = "exerb50"
+exerb_dll_base        = "exerb53"
 file_resource_rc      = "src/exerb/resource.rc"
 file_resource_dll_o   = "tmp/resource_dll.o"
 file_resource_cui_o   = "tmp/resource_cui.o"

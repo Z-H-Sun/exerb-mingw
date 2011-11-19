@@ -1,6 +1,6 @@
 
 #==============================================================================#
-# $Id: icon_file.rb,v 1.4 2005/05/05 02:26:29 yuya Exp $
+# $Id: icon_file.rb,v 1.5 2010/06/26 03:13:36 arton Exp $
 #==============================================================================#
 
 require 'exerb/win32/struct/icon_header'
@@ -39,15 +39,18 @@ class Exerb::Win32::IconFile
       Exerb::Win32::Struct::IconDirEntry.read(io)
     }.collect { |icon_dir_entry|
       io.seek(base + icon_dir_entry.image_offset)
+      icon_image_header = Exerb::Win32::Struct::IconImageHeader.read(io)
+      io.seek(icon_image_header.position)
 
       entry = Exerb::Win32::IconFile::Entry.new
       entry.width     = icon_dir_entry.width
       entry.height    = icon_dir_entry.height
-      entry.bit_count = icon_dir_entry.bit_count
-      entry.bit_count = 4 if entry.bit_count == 0 && icon_dir_entry.color_count == 16
-      entry.bit_count = 8 if entry.bit_count == 0 && icon_dir_entry.bytes_in_res == 2216
-      entry.bit_count = 8 if entry.bit_count == 0 && icon_dir_entry.bytes_in_res == 1384
+      entry.bit_count = icon_image_header.bit_count
       entry.value     = io.read(icon_dir_entry.bytes_in_res)
+      if entry.width == 0
+        entry.bit_count = icon_dir_entry.bit_count
+        entry.width = entry.height = 256
+      end
       entry
     }
 
