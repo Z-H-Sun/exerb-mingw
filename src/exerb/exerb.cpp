@@ -10,9 +10,11 @@
 
 #ifdef RUBY19
 extern "C" {
-#include <yarvcore.h>
+// 1.9.2 had yarvcore.h, renamed to vm_core.h in 1.9.3
+//  #include <vm_core.h> 
 }
 #endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -50,7 +52,9 @@ HMODULE g_loaded_resource_table[4] = {0};
 
 extern "C" VALUE rb_load_path;
 extern "C" VALUE rb_argv0;
+#ifndef RUBY19
 extern "C" VALUE rb_progname;
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -63,13 +67,16 @@ static void exerb_setup_resource_library();
 static void exerb_execute();
 static void exerb_cleanup();
 extern "C" VALUE exerb_require(VALUE fname);
+#ifdef RUBY19
+extern "C" VALUE exerb_require_safe(VALUE fname, int safe);
+#endif
 static bool exerb_find_ruby_pre_loaded(const VALUE filename);
 static bool exerb_find_file_pre_loaded(const VALUE filename, VALUE *feature, LOADED_LIBRARY_ENTRY **loaded_library_entry);
 static bool exerb_find_file_inside(const VALUE filename, WORD *id, VALUE *feature, VALUE *realname);
 static bool exerb_find_file_outside(const VALUE filename, VALUE *feature, VALUE *realname);
 static VALUE exerb_load_ruby_script(const FILE_ENTRY_HEADER *file_entry);
 static VALUE exerb_load_ruby_script(const char *filepath);
-#ifdef RUBY19
+#ifdef RUBY19_COMPILED_CODE
 static VALUE exerb_load_compiled_script(const FILE_ENTRY_HEADER *file_entry);
 #endif
 static void exerb_load_extension_library(const FILE_ENTRY_HEADER *file_entry);
@@ -100,15 +107,17 @@ exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*o
 	::ruby_init();
 	argc = ::rb_w32_cmdvector(::GetCommandLine(), &argv);
 	::ruby_set_argv(argc - 1, argv + 1);
-	::exerb_set_script_name("exerb");
-	::rb_ary_push(rb_load_path, ::rb_str_new2("."));
+	::exerb_set_script_name((char *)"exerb");
+#ifndef RUBY19  
+	::rb_ary_push(rb_load_path, rb_str_new2("."));
+#endif  
 
 	int state = 0, result_code = 0;
 	::rb_protect(exerb_main_in_protect, UINT2NUM((DWORD)on_init), &state);
 
 	if ( state ) {
 #ifdef RUBY19
-		VALUE errinfo = GET_THREAD()->errinfo;
+		VALUE errinfo = rb_errinfo();
 #else
 		VALUE errinfo = ruby_errinfo;
 #endif
@@ -176,18 +185,24 @@ static void
 exerb_set_script_name(char* name)
 {
 	::ruby_script(name);
+#ifdef RUBY19
+  rb_argv0 = rb_str_new2(name);  
+#else
 	rb_argv0 = rb_progname;
+#endif  
 }
 
 static void
 exerb_setup_kcode()
 {
+#ifndef RUBY19  
 	switch ( g_archive_header->kcode ) {
 	case ARCHIVE_HEADER_OPTIONS_KCODE_NONE: ::rb_set_kcode("n"); break;
 	case ARCHIVE_HEADER_OPTIONS_KCODE_EUC:  ::rb_set_kcode("e"); break;
 	case ARCHIVE_HEADER_OPTIONS_KCODE_SJIS: ::rb_set_kcode("s"); break;
 	case ARCHIVE_HEADER_OPTIONS_KCODE_UTF8: ::rb_set_kcode("u"); break;
 	}
+#endif
 }
 
 static void
@@ -197,7 +212,7 @@ exerb_setup_resource_library()
 
 	for ( int i = 0; i < g_file_table_header->number_of_headers; i++, file_entry++ ) {
 		if ( file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_RESOURCE_LIBRARY ) {
-			if ( g_loaded_resource_count > sizeof(g_loaded_resource_table) / sizeof(HMODULE) ) {
+			if ( (unsigned int)g_loaded_resource_count > sizeof(g_loaded_resource_table) / sizeof(HMODULE) ) {
 				::rb_raise(rb_eExerbRuntimeError, "the loaded recourse table is too big.");
 			}
 
@@ -217,7 +232,7 @@ exerb_execute()
 			::exerb_set_script_name(::exerb_get_name_from_entry(::exerb_find_name_entry(file_entry->id)));
 			::exerb_load_ruby_script(file_entry);
 			return;
-#ifdef RUBY19
+#ifdef RUBY19_COMPILED_CODE
 		} else if ( file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_COMPILED_SCRIPT ) {
 			::exerb_set_script_name(::exerb_get_name_from_entry(::exerb_find_name_entry(file_entry->id)));
 			::exerb_load_compiled_script(file_entry);
@@ -242,10 +257,22 @@ exerb_cleanup()
 	}
 }
 
+#ifdef RUBY19
+extern "C" VALUE
+exerb_require_safe(VALUE fname, int safe)
+{
+  return exerb_require(fname);
+}
+#endif
+
 extern "C" VALUE
 exerb_require(VALUE fname)
 {
+#ifdef RUBY19
+  SafeStringValue(fname);
+#else
 	::Check_SafeStr(fname);
+#endif  
 
 	LOADED_LIBRARY_ENTRY *loaded_library_entry = NULL;
 	WORD id = 0;
@@ -272,7 +299,7 @@ exerb_require(VALUE fname)
 			::rb_provide(RSTRING_PTR(feature));
 			::exerb_load_ruby_script(file_entry);
 			return Qtrue;
-#ifdef RUBY19
+#ifdef RUBY19_COMPILED_CODE
 		case FILE_ENTRY_HEADER_TYPE_COMPILED_SCRIPT:
 			::rb_provide(RSTRING_PTR(feature));
 			::exerb_load_compiled_script(file_entry);
@@ -304,7 +331,7 @@ exerb_require(VALUE fname)
 	return Qfalse;
 }
 
-static char* EXTTBL[] = { "rb", "so", "dll" };
+static char* EXTTBL[] = {(char *)"rb", (char *)"so", (char *)"dll" };
 
 static bool
 exerb_find_ruby_pre_loaded(const VALUE filename)
@@ -314,7 +341,7 @@ exerb_find_ruby_pre_loaded(const VALUE filename)
 		return ::rb_provided(fname) != Qfalse;
 	} else {
 		char* p = (char*)_alloca(strlen(fname) + 8);
-		for (int i = 0; i < sizeof(EXTTBL)/sizeof(EXTTBL[0]); i++) {
+		for (int i = 0; (unsigned int)i < sizeof(EXTTBL)/sizeof(EXTTBL[0]); i++) {
 			sprintf(p, "%s.%s", fname, EXTTBL[i]);
 			if (::rb_provided(p)) {
 				return true;
@@ -329,20 +356,20 @@ exerb_find_file_pre_loaded(const VALUE filename, VALUE *feature, LOADED_LIBRARY_
 {
 	const char *fname = RSTRING_PTR(filename);
 
-	for ( int i = 0; i < sizeof(g_pre_loaded_library_table) / sizeof(LOADED_LIBRARY_ENTRY); i++ ) {
+	for ( int i = 0; (unsigned int)i < sizeof(g_pre_loaded_library_table) / sizeof(LOADED_LIBRARY_ENTRY); i++ ) {
 		const char *name = g_pre_loaded_library_table[i].filepath;
 		if ( !name ) continue;
 
 		if ( ::stricmp(name, fname) == 0 ) {
-			*feature              = ::rb_str_new2(name);
+			*feature              = rb_str_new2(name);
 			*loaded_library_entry = &g_pre_loaded_library_table[i];
 			return true;
 		} else if ( ::exerb_cmp_filename_with_ext(name, fname, "so") ) {
-			*feature              = ::rb_str_new2(name);
+			*feature              = rb_str_new2(name);
 			*loaded_library_entry = &g_pre_loaded_library_table[i];
 			return true;
 		} else if ( ::exerb_cmp_filename_with_ext(name, fname, "dll") ) {
-			*feature              = ::rb_str_concat(::rb_str_new2(fname), ::rb_str_new2(".so"));
+			*feature              = rb_str_concat(rb_str_new2(fname), rb_str_new2(".so"));
 			*loaded_library_entry = &g_pre_loaded_library_table[i];
 			return true;
 		}
@@ -354,7 +381,11 @@ exerb_find_file_pre_loaded(const VALUE filename, VALUE *feature, LOADED_LIBRARY_
 static bool
 exerb_find_file_inside(const VALUE filename, WORD *id, VALUE *feature, VALUE *realname)
 {
+#ifdef RUBY19
+	const char *fname = rb_string_value_ptr((volatile VALUE*) &filename);
+#else
 	const char *fname = STR2CSTR(filename);
+#endif  
 
 	NAME_ENTRY_HEADER *name_entry = ::exerb_get_first_name_entry();
 
@@ -363,23 +394,26 @@ exerb_find_file_inside(const VALUE filename, WORD *id, VALUE *feature, VALUE *re
 
 		if ( ::strcmp(name, fname) == 0 ) {
 			*id       = name_entry->id;
-			*feature  = ::rb_str_new2(name);
-			*realname = ::rb_str_new2(name);
+			*feature  = rb_str_new2(name);
+			*realname = rb_str_new2(name);
 			return true;
 		} else if ( ::exerb_cmp_filename_with_ext(name, fname, "rb") ) {
 			*id       = name_entry->id;
-			*feature  = ::rb_str_new2(name);
-			*realname = ::rb_str_new2(name);
+			*feature  = rb_str_new2(name);
+			*realname = rb_str_new2(name);
 			return true;
 		} else if ( ::exerb_cmp_filename_with_ext(name, fname, "so") ) {
 			*id       = name_entry->id;
-			*feature  = ::rb_str_new2(name);
-			*realname = ::rb_str_new2(name);
+			*feature  = rb_str_new2(name);
+			*realname = rb_str_new2(name);
 			return true;
 		} else if ( ::exerb_cmp_filename_with_ext(name, fname, "dll") ) {
+			FILE_ENTRY_HEADER* file_entry = ::exerb_find_file_entry(name_entry->id);
+			if (file_entry->type_of_file != FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY) continue;
+
 			*id       = name_entry->id;
-			*feature  = ::rb_str_concat(::rb_str_new2(fname), ::rb_str_new2(".so"));
-			*realname = ::rb_str_new2(name);
+			*feature  = rb_str_concat(rb_str_new2(fname), rb_str_new2(".so"));
+			*realname = rb_str_new2(name);
 			return true;
 		}
 	}
@@ -394,9 +428,9 @@ exerb_find_file_inside(const VALUE filename, WORD *id, VALUE *feature, VALUE *re
 static bool
 exerb_find_file_outside(const VALUE filename, VALUE *feature, VALUE *realname)
 {
-	const VALUE filename_rb  = ::rb_str_concat(::rb_str_dup(filename), ::rb_str_new2(".rb"));
-	const VALUE filename_so  = ::rb_str_concat(::rb_str_dup(filename), ::rb_str_new2(".so"));
-	const VALUE filename_dll = ::rb_str_concat(::rb_str_dup(filename), ::rb_str_new2(".dll"));
+	const VALUE filename_rb  = ::rb_str_concat(::rb_str_dup(filename), rb_str_new2(".rb"));
+	const VALUE filename_so  = ::rb_str_concat(::rb_str_dup(filename), rb_str_new2(".so"));
+	const VALUE filename_dll = ::rb_str_concat(::rb_str_dup(filename), rb_str_new2(".dll"));
 
 	if ( *realname = ::rb_find_file(*feature = filename)    ) return true;
 	if ( *realname = ::rb_find_file(*feature = filename_rb) ) return true;
@@ -412,12 +446,12 @@ exerb_find_file_outside(const VALUE filename, VALUE *feature, VALUE *realname)
 static VALUE
 exerb_load_ruby_script(const FILE_ENTRY_HEADER *file_entry)
 {
-	static const ID    id_eval = ::rb_intern("eval");
-	static const VALUE binding = ::rb_const_get(rb_mKernel, ::rb_intern("TOPLEVEL_BINDING"));
+	static const ID    id_eval = rb_intern("eval");
+	static const VALUE binding = ::rb_const_get(rb_mKernel, rb_intern("TOPLEVEL_BINDING"));
 	static const VALUE lineno  = INT2FIX(1);
 	
-	const VALUE code = ::rb_str_new(::exerb_get_file_from_entry(file_entry), file_entry->size_of_file);
-	const VALUE name = ::rb_str_new2(::exerb_get_name_from_entry(::exerb_find_name_entry(file_entry->id)));
+	const VALUE code = rb_str_new(::exerb_get_file_from_entry(file_entry), file_entry->size_of_file);
+	const VALUE name = rb_str_new2(::exerb_get_name_from_entry(::exerb_find_name_entry(file_entry->id)));
 
 	return ::rb_funcall(rb_mKernel, id_eval, 4, code, binding, name, lineno);
 }
@@ -425,17 +459,17 @@ exerb_load_ruby_script(const FILE_ENTRY_HEADER *file_entry)
 static VALUE
 exerb_load_ruby_script(const char *filepath)
 {
-	::rb_load(::rb_str_new2(filepath), 0);
+	::rb_load(rb_str_new2(filepath), 0);
 	return Qnil;
 }
 
-#ifdef RUBY19
+#ifdef RUBY19_COMPILED_CODE
 static VALUE
 exerb_load_compiled_script(const FILE_ENTRY_HEADER *file_entry)
 {
-	static const ID id_load = ::rb_intern("load");
-	static const ID id_eval = ::rb_intern("eval");
-	const VALUE code     = ::rb_str_new(::exerb_get_file_from_entry(file_entry), file_entry->size_of_file);
+	static const ID id_load = rb_intern("load");
+	static const ID id_eval = rb_intern("eval");
+	const VALUE code     = rb_str_new(::exerb_get_file_from_entry(file_entry), file_entry->size_of_file);
 	const VALUE iseq_ary = ::rb_marshal_load(code);
 	const VALUE iseq     = ::rb_funcall(rb_cISeq, id_load, 1, iseq_ary);
 
@@ -477,7 +511,7 @@ exerb_load_library(const FILE_ENTRY_HEADER *file_entry)
 static HMODULE
 exerb_load_library(const char *base_of_file, const int size_of_file, const char* filepath, bool no_replace_function)
 {
-	if ( g_loaded_library_count > sizeof(g_loaded_library_table) / sizeof(LOADED_LIBRARY_ENTRY) ) {
+	if ((unsigned int)g_loaded_library_count > sizeof(g_loaded_library_table) / sizeof(LOADED_LIBRARY_ENTRY) ) {
 		::rb_raise(rb_eExerbRuntimeError, "the loaded library table is too big.");
 	}
 
@@ -519,8 +553,8 @@ exerb_preload_library(const FILE_ENTRY_HEADER *file_entry)
 
 	HMODULE module = ::exerb_load_library(file_entry);
 
-	if ( file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY ) {
-		for ( int i = 0; i < sizeof(g_pre_loaded_library_table) / sizeof(LOADED_LIBRARY_ENTRY); i++ ) {
+	if (file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY ) {
+		for ( int i = 0; (unsigned int)i < sizeof(g_pre_loaded_library_table) / sizeof(LOADED_LIBRARY_ENTRY); i++ ) {
 			if ( !g_pre_loaded_library_table[i].handle ) {
 				g_pre_loaded_library_table[i].filepath = ::exerb_strdup(name);
 				g_pre_loaded_library_table[i].handle   = module;
@@ -547,7 +581,7 @@ exerb_replace_import_dll(const char *base_of_file)
 	::exerb_replace_import_dll_name(&info, "exerb_dummy_module.dll", self_filename); // for an exerb plug-in
 	::exerb_replace_import_dll_name(&info, "ruby.exe",               self_filename); // for an extension library on static linked ruby
 #ifdef RUBY19
-	::exerb_replace_import_dll_name(&info, "msvcrt-ruby19.dll",      self_filename); // for an extension library on dynamic linked ruby
+	::exerb_replace_import_dll_name(&info, "msvcrt-ruby191.dll",      self_filename); // for an extension library on dynamic linked ruby
 #else
 	::exerb_replace_import_dll_name(&info, "msvcrt-ruby18.dll",      self_filename); // for an extension library on dynamic linked ruby
 	::exerb_replace_import_dll_name(&info, "cygwin-ruby18.dll",      self_filename); // for experiment

@@ -1,6 +1,6 @@
 
 #==============================================================================#
-# $Id: icon_dir_entry.rb,v 1.4 2005/04/17 15:56:25 yuya Exp $
+# $Id: icon_dir_entry.rb,v 1.5 2010/06/26 03:13:36 arton Exp $
 #==============================================================================#
 
 require 'exerb/win32/struct/base'
@@ -43,6 +43,41 @@ class Exerb::Win32::Struct::IconDirEntry < Exerb::Win32::Struct::Base
   end
 
 end # Exerb::Win32::Struct::IconDirEntry
+
+#==============================================================================#
+
+class Exerb::Win32::Struct::IconImageHeader < Exerb::Win32::Struct::Base
+
+  FORMAT = 'LllSSLLllLL'
+
+  def initialize
+    # This struct is identical to BITMAPINFOHEADER.
+    
+    @_size           = 0
+    @width           = 0
+    @height          = 0
+    @planes          = 0
+    @bit_count       = 0
+    @compression     = 0
+    @size_image      = 0
+    @xpels_per_meter = 0
+    @ypels_per_meter = 0
+    @clr_used        = 0
+    @clr_important   = 0
+  end
+
+  attr_accessor :_size, :width, :height, :planes, :bit_count, :compression, :size_image, :xpels_per_meter, :ypels_per_meter, :clr_used, :clr_important
+
+  def pack
+    return [@_size, @width, @height, @planes, @bit_count, @compression, @size_image, @xpels_per_meter, @ypels_per_meter, @clr_used, @clr_important].pack(FORMAT)
+  end
+
+  def unpack(bin)
+    @_size, @width, @height, @planes, @bit_count, @compression, @size_image, @xpels_per_meter, @ypels_per_meter, @clr_used, @clr_important = bin.unpack(FORMAT)
+    return self
+  end
+
+end # Exerb::Win32::Struct::IconImageHeader
 
 #==============================================================================#
 #==============================================================================#

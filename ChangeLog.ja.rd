@@ -1,8 +1,22 @@
 =begin
 
-$Id: ChangeLog.ja.rd,v 1.149 2009/09/08 12:25:47 arton Exp $
+$Id: ChangeLog.ja.rd,v 1.152 2010/12/26 00:03:43 arton Exp $
 
 = Exerb - ChangeLog
+
+== 5.3.0
+
+* 安定版コアをRuby 1.8.7-p330に変更
+* Kitajimaさんの同名DLL取り込みパッチ(exerb-dev:550)を反対意見が無いので取り込み。
+
+== 5.2.0
+
+* 安定版コアをRuby 1.8.7-p299に変更
+* Kitajimaさんの256色アイコンサポートパッチ(exerb_100217.patch)を取り込み。
+
+== 5.1.0
+
+* 安定版コアをRuby 1.8.7-p249に変更
 
 == 5.0.0
 

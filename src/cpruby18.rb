@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby -Ks
-# $Id: cpruby18.rb,v 1.2 2008/06/13 21:07:26 arton Exp $
+# $Id: cpruby18.rb,v 1.3 2010/12/26 00:03:43 arton Exp $
 =begin
-  -libruby18“à‚Ìƒ\[ƒXƒtƒ@ƒCƒ‹‚ğXV
+  -libruby18Ó ÂŒÃœ[Ã˜Ã´Ã€ÃƒÃ‹Â°Í˜Ğ–
 =end
 
 require 'fileutils'
@@ -29,7 +29,11 @@ end
 rm_and_cp(ARGV[0], 'libruby18/src', [/main.c/i])
 rm_and_cp("#{ARGV[0]}/win32", 'libruby18/src/win32', [/winmain.c/i])
 rm_and_cp("#{ARGV[0]}/missing", 'libruby18/src/missing')
-FileUtils.cp('libruby18/src/win32/config.h', 'libruby18/src')
+begin
+  FileUtils.cp('libruby18/src/win32/config.h', 'libruby18/src')
+rescue Errno::ENOENT
+  FileUtils.cp('libruby18/src/config.h', 'libruby18/src/win32')
+end  
 
 File.open('libruby18/src/eval_exerb.c', 'w') do |dst|
   File.open('libruby18/src/eval.c', 'r').each_line do |i|

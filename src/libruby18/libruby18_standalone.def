@@ -147,10 +147,12 @@ rb_big_mul
 rb_big_mul0
 rb_big_norm
 rb_big_or
+rb_big_pack
 rb_big_plus
 rb_big_pow
 rb_big_rand
 rb_big_rshift
+rb_big_unpack
 rb_big_xor
 rb_block_call
 rb_block_dup
@@ -852,6 +854,8 @@ ruby_eval_tree
 ruby_eval_tree_begin
 ruby_exec
 ruby_finalize
+ruby_find_basename
+ruby_find_extname
 ruby_float_step
 ruby_frame
 ruby_gc_stress

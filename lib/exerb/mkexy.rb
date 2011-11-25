@@ -25,7 +25,7 @@ END {
     file.puts("general:")
     file.puts("  startup: #{$0}")
     file.puts("  core: cui")
-    file.puts("  kcode: #{$KCODE.downcase}")
+    file.puts("  kcode: none") #file.puts("  kcode: #{$KCODE.downcase}")#no KCODE in 1.9
     file.puts("")
     file.puts("file:")
     file_list.each { |type, filename, filepath|
