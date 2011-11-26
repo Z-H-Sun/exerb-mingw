@@ -15,7 +15,7 @@ module Exerb
   CORE_PATH = [
     (File.dirname(ExerbRuntime.filepath) if defined?(ExerbRuntime)),
     ENV['EXERBCORE'],
-    File.join(Config::CONFIG['datadir'], 'exerb'),
+    File.join(RbConfig::CONFIG['datadir'], 'exerb'),
     '.',
   ].compact
 
