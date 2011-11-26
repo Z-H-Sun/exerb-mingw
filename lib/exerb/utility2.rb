@@ -13,7 +13,7 @@ module Exerb::Utility2
   def self.loaded_features(reject_list = [])
     reject_list << File.expand_path(__FILE__)
 
-    return $".collect { |filename|
+    return $LOADED_FEATURES.collect { |filename|
       case filename.downcase
       when /\.rb$/o  then type = "script"
       when /\.so$/o  then type = "extension-library"
@@ -22,7 +22,7 @@ module Exerb::Utility2
       [type, filename]
     }.collect { |type, filename|
       if File.exist?(filename)
-        [type, filename, filename]
+        [type, require_name(filename), filename]
       else
         $LOAD_PATH.collect { |dirpath|
           [type, filename, File.join(dirpath, filename)]
@@ -37,6 +37,15 @@ module Exerb::Utility2
     }
   end
 
+  def self.require_name(filename)
+    path = $LOAD_PATH.find { |path| filename.include?(path) }
+    if path
+      # remove both the path and the platform from the filename
+      return filename.gsub("#{path}/", "").gsub("#{RUBY_PLATFORM}/", "")
+    end
+
+    filename
+  end
 end # Exerb::Utility2
 
 #==============================================================================#
