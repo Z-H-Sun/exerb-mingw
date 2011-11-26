@@ -25,7 +25,11 @@ END {
     file.puts("general:")
     file.puts("  startup: #{$0}")
     file.puts("  core: cui")
-    file.puts("  kcode: none") #file.puts("  kcode: #{$KCODE.downcase}")#no KCODE in 1.9
+    if RUBY_VERSION < "1.9"
+      file.puts("  kcode: #{$KCODE.downcase}")
+    else
+      file.puts("  kcode: none") #no KCODE in 1.9
+    end
     file.puts("")
     file.puts("file:")
     file_list.each { |type, filename, filepath|
