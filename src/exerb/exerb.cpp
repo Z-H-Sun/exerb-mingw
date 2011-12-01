@@ -202,6 +202,8 @@ exerb_setup_kcode()
 	case ARCHIVE_HEADER_OPTIONS_KCODE_SJIS: ::rb_set_kcode("s"); break;
 	case ARCHIVE_HEADER_OPTIONS_KCODE_UTF8: ::rb_set_kcode("u"); break;
 	}
+#else
+	exerb_require(rb_str_new2("enc/encdb"));
 #endif
 }
 
