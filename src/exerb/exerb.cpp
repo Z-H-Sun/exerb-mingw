@@ -110,7 +110,7 @@ exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*o
 	::exerb_set_script_name((char *)"exerb");
 #ifndef RUBY19  
 	::rb_ary_push(rb_load_path, rb_str_new2("."));
-#endif  
+#endif
 
 	int state = 0, result_code = 0;
 	::rb_protect(exerb_main_in_protect, UINT2NUM((DWORD)on_init), &state);
@@ -189,7 +189,7 @@ exerb_set_script_name(char* name)
   rb_argv0 = rb_str_new2(name);  
 #else
 	rb_argv0 = rb_progname;
-#endif  
+#endif
 }
 
 static void
@@ -272,7 +272,7 @@ exerb_require(VALUE fname)
   SafeStringValue(fname);
 #else
 	::Check_SafeStr(fname);
-#endif  
+#endif
 
 	LOADED_LIBRARY_ENTRY *loaded_library_entry = NULL;
 	WORD id = 0;
@@ -385,7 +385,7 @@ exerb_find_file_inside(const VALUE filename, WORD *id, VALUE *feature, VALUE *re
 	const char *fname = rb_string_value_ptr((volatile VALUE*) &filename);
 #else
 	const char *fname = STR2CSTR(filename);
-#endif  
+#endif
 
 	NAME_ENTRY_HEADER *name_entry = ::exerb_get_first_name_entry();
 
@@ -780,8 +780,13 @@ exerb_hook_load_library(LPCTSTR filename)
 	_RPT1(_CRT_WARN, "exerb_hook_load_library('%s')\n", filename);
 
 	if ( filename ) {
+#ifdef RUBY19
+		if ( ::stricmp(filename, "msvcrt-ruby191") == 0 || ::stricmp(filename, "msvcrt-ruby191.dll") == 0 ) {
+			return ::GetModuleHandle(NULL);
+#else
 		if ( ::stricmp(filename, "msvcrt-ruby18") == 0 || ::stricmp(filename, "msvcrt-ruby18.dll") == 0 ) {
 			return ::GetModuleHandle(NULL);
+#endif
 		} else if ( FILE_ENTRY_HEADER *file_entry = ::exerb_find_file_entry(filename, "dll") ) {
 			if ( file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY ||
 				 file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_DYNAMIC_LIBRARY ) {
@@ -799,8 +804,13 @@ exerb_hook_load_library_ex(LPCTSTR filename, HANDLE file, DWORD flags)
 	_RPT3(_CRT_WARN, "exerb_hook_load_library_ex('%s', %i, %i)\n", filename, file, flags);
 
 	if ( filename ) {
+#ifdef RUBY19
+		if ( ::stricmp(filename, "msvcrt-ruby191") == 0 || ::stricmp(filename, "msvcrt-ruby191.dll") == 0 ) {
+			return ::GetModuleHandle(NULL);
+#else
 		if ( ::stricmp(filename, "msvcrt-ruby18") == 0 || ::stricmp(filename, "msvcrt-ruby18.dll") == 0 ) {
 			return ::GetModuleHandle(NULL);
+#endif
 		} else if ( FILE_ENTRY_HEADER *file_entry = ::exerb_find_file_entry(filename, "dll") ) {
 			if ( file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY ||
 				 file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_DYNAMIC_LIBRARY ) {
@@ -817,10 +827,17 @@ exerb_hook_get_module_handle(LPCTSTR filename)
 {
 	_RPT1(_CRT_WARN, "exerb_hook_get_module_handle('%s')\n", filename);
 
+#ifdef RUBY19
+	if ( filename && (::stricmp(filename, "msvcrt-ruby191")     == 0 ||
+	                  ::stricmp(filename, "msvcrt-ruby191.dll") == 0) ) {
+		return ::GetModuleHandle(NULL);
+	}
+#else
 	if ( filename && (::stricmp(filename, "msvcrt-ruby18")     == 0 ||
 	                  ::stricmp(filename, "msvcrt-ruby18.dll") == 0) ) {
 		return ::GetModuleHandle(NULL);
 	}
+#endif
 
 	return ::GetModuleHandle(filename);
 }
