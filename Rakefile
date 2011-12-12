@@ -147,6 +147,20 @@ def link_cpp(target, options)
   file options[:def] => target if options[:def]
 end
 
+def make_19def(target, source)
+  file target => source do
+    mkdir_p File.dirname(target)
+    File.open(target, "a") do |out|
+      File.open(source, "r").each_line do |line|
+        case line
+        when /=rb_w32_/
+          out.puts '    ' + line
+        end
+      end
+    end
+  end
+end
+
 def make_def_proxy(target, source, proxy)
   file target => source do
     mkdir_p File.dirname(target)
@@ -155,6 +169,10 @@ def make_def_proxy(target, source, proxy)
         case line
         when /\A\s*(LIBRARY|EXPORTS)/
           out.puts line
+        when /\A(\s*)(\w+@\w+)=(rb_w32_\w+@.*)\Z/
+          out.puts "#{$1}#{$2} = #{proxy}.#{$3}"
+        when /\A(\s*)(\w+)=(rb_w32_\w+)\Z/
+          out.puts "#{$1}#{$2} = #{proxy}.#{$3}"
   		when /\A(\s*)(\w+@\w+)(\s+@.*)\Z/
     	  out.puts "#{$1}#{$2} = #{proxy}.#{$2}#{$3}"
         when /\A(\s*)(\w+)(\s+@.*)\Z/
@@ -263,8 +281,20 @@ if ruby_lib
 end
 
 make_resource file_resource_dll_o, file_resource_rc, "RUNTIME"
-link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => file_exerb_def, :implib => file_exerb_lib
-make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
+
+if RUBY_VERSION == '1.9.3'
+  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => file_exerb_def, :implib => file_exerb_lib
+
+  make_19def(file_exerb_def, 'src/mingw193/msvcrt-ruby191.def')
+  rm_f file_exerb_dll
+
+  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => nil, :implib => file_exerb_lib
+  make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
+  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => nil, :implib => file_exerb_lib
+else
+  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => file_exerb_def, :implib => file_exerb_lib
+  make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
+end
 
 make_resource file_resource_cui_o, file_resource_rc, "CUI"
 link_cpp file_ruby_cui, :sources => (cui_sources + lib_sources + [file_exerb_def])

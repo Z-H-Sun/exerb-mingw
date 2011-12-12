@@ -70,9 +70,6 @@ extern "C" VALUE exerb_require(VALUE fname);
 #ifdef RUBY19
 extern "C" VALUE exerb_require_safe(VALUE fname, int safe);
 
-#undef getenv
-extern "C" char * getenv(const char *name) {return rb_w32_getenv(name);};
-
 #endif
 static bool exerb_find_ruby_pre_loaded(const VALUE filename);
 static bool exerb_find_file_pre_loaded(const VALUE filename, VALUE *feature, LOADED_LIBRARY_ENTRY **loaded_library_entry);
@@ -739,7 +736,6 @@ exerb_find_resource(const DWORD base_of_image, const int type, const int id, DWO
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
 static void
 exerb_replace_import_function(const HMODULE module)
 {
