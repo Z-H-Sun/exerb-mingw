@@ -69,6 +69,7 @@ static void exerb_cleanup();
 extern "C" VALUE exerb_require(VALUE fname);
 #ifdef RUBY19
 extern "C" VALUE exerb_require_safe(VALUE fname, int safe);
+
 #endif
 static bool exerb_find_ruby_pre_loaded(const VALUE filename);
 static bool exerb_find_file_pre_loaded(const VALUE filename, VALUE *feature, LOADED_LIBRARY_ENTRY **loaded_library_entry);
@@ -186,7 +187,7 @@ exerb_set_script_name(char* name)
 {
 	::ruby_script(name);
 #ifdef RUBY19
-  rb_argv0 = rb_str_new2(name);  
+	rb_argv0 = rb_str_new2(name);
 #else
 	rb_argv0 = rb_progname;
 #endif
@@ -195,7 +196,7 @@ exerb_set_script_name(char* name)
 static void
 exerb_setup_kcode()
 {
-#ifndef RUBY19  
+#ifndef RUBY19
 	switch ( g_archive_header->kcode ) {
 	case ARCHIVE_HEADER_OPTIONS_KCODE_NONE: ::rb_set_kcode("n"); break;
 	case ARCHIVE_HEADER_OPTIONS_KCODE_EUC:  ::rb_set_kcode("e"); break;
@@ -263,7 +264,7 @@ exerb_cleanup()
 extern "C" VALUE
 exerb_require_safe(VALUE fname, int safe)
 {
-  return exerb_require(fname);
+	return exerb_require(fname);
 }
 #endif
 
@@ -271,7 +272,7 @@ extern "C" VALUE
 exerb_require(VALUE fname)
 {
 #ifdef RUBY19
-  SafeStringValue(fname);
+	SafeStringValue(fname);
 #else
 	::Check_SafeStr(fname);
 #endif
@@ -735,7 +736,6 @@ exerb_find_resource(const DWORD base_of_image, const int type, const int id, DWO
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
 static void
 exerb_replace_import_function(const HMODULE module)
 {
