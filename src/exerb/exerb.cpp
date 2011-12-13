@@ -205,6 +205,9 @@ exerb_setup_kcode()
 	}
 #else
 	exerb_require(rb_str_new2("enc/encdb"));
+	exerb_require(rb_str_new2("enc/trans/transdb"));
+	exerb_require(rb_str_new2("enc/trans/utf_16_32"));
+	exerb_require(rb_str_new2("enc/trans/single_byte"));
 #endif
 }
 
