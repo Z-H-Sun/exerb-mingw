@@ -9,6 +9,7 @@
 #include "resource.h"
 
 #ifdef RUBY19
+#include <internal.h>
 extern "C" {
 // 1.9.2 had yarvcore.h, renamed to vm_core.h in 1.9.3
 //  #include <vm_core.h> 
@@ -104,12 +105,17 @@ static FARPROC WINAPI exerb_hook_get_proc_address(HMODULE module, LPCTSTR procna
 int
 exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*on_fail)(VALUE))
 {
+#ifdef RUBY19
+	ruby_sysinit(&argc, &argv);
+	RUBY_INIT_STACK;
+	ruby_init();
+	::exerb_set_script_name((char *)"exerb");
+#else
 	::NtInitialize(&argc, &argv);
 	::ruby_init();
 	argc = ::rb_w32_cmdvector(::GetCommandLine(), &argv);
 	::ruby_set_argv(argc - 1, argv + 1);
 	::exerb_set_script_name((char *)"exerb");
-#ifndef RUBY19  
 	::rb_ary_push(rb_load_path, rb_str_new2("."));
 #endif
 
@@ -204,6 +210,7 @@ exerb_setup_kcode()
 	case ARCHIVE_HEADER_OPTIONS_KCODE_UTF8: ::rb_set_kcode("u"); break;
 	}
 #else
+	Init_prelude();
 	exerb_require(rb_str_new2("enc/encdb"));
 	exerb_require(rb_str_new2("enc/trans/transdb"));
 	exerb_require(rb_str_new2("enc/trans/utf_16_32"));
