@@ -33,7 +33,7 @@ RUBY_SRC_MISSING = {
   "1.8.6" => ["fileblocks.c", "crypt.c", "flock.c"],
   "1.8.7" => ["fileblocks.c", "crypt.c", "flock.c"],
   # "1.9.2" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c"],
-  "1.9.3" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c"],
+  "1.9.3" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c", "prelude.c"],
 }
 RUBY_SRC_IGNORE = [
   # 1.8
