@@ -210,11 +210,11 @@ exerb_setup_kcode()
 	case ARCHIVE_HEADER_OPTIONS_KCODE_UTF8: ::rb_set_kcode("u"); break;
 	}
 #else
-	Init_prelude();
 	exerb_require(rb_str_new2("enc/encdb"));
 	exerb_require(rb_str_new2("enc/trans/transdb"));
 	exerb_require(rb_str_new2("enc/trans/utf_16_32"));
 	exerb_require(rb_str_new2("enc/trans/single_byte"));
+	Init_prelude();
 #endif
 }
 
