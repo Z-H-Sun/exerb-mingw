@@ -13,6 +13,12 @@ module Exerb::Utility2
   def self.loaded_features(reject_list = [])
     reject_list << File.expand_path(__FILE__)
 
+    if RUBY_VERSION == "1.9.3"
+      $LOADED_FEATURES << 'enc/trans/utf_16_32.so'
+      $LOADED_FEATURES << 'enc/trans/single_byte.so'
+      $LOADED_FEATURES.uniq!
+    end
+
     return $LOADED_FEATURES.collect { |filename|
       case filename.downcase
       when /\.rb$/o  then type = "script"
