@@ -14,9 +14,11 @@ module Exerb::Utility2
     reject_list << File.expand_path(__FILE__)
 
     if RUBY_VERSION == "1.9.3"
-      $LOADED_FEATURES << 'enc/trans/utf_16_32.so'
-      $LOADED_FEATURES << 'enc/trans/single_byte.so'
-      $LOADED_FEATURES.uniq!
+      ['enc/trans/utf_16_32.so', 'enc/trans/single_byte.so'].each do |enc|
+        unless $LOADED_FEATURES.find { |f| f.include?(enc) }
+          $LOADED_FEATURES << enc
+        end
+      end
     end
 
     return $LOADED_FEATURES.collect { |filename|
