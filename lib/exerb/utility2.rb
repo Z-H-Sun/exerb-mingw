@@ -98,6 +98,8 @@ module Exerb::Utility2
   end
 
   def self.detected_libraries
+    require "rbconfig"
+
     exec_prefix = RbConfig::CONFIG["exec_prefix"]
     libruby_so  = RbConfig::CONFIG["LIBRUBY_SO"]
     loaded      = loaded_libraries
