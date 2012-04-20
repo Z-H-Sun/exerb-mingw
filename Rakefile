@@ -19,8 +19,9 @@ SUPPORTED_VERSIONS = {
 NEEDS_PATCHING = {
   "1.8.6" => ["eval.c", "variable.c"],
   "1.8.7" => ["eval.c", "variable.c"],
-  # "1.9.2" => ["encoding.c", "load.c", "variable.c"],
-  "1.9.3" => ["variable.c", "transcode.c", "encoding.c", "load.c"],
+  #"1.9.2" => ["encoding.c", "load.c", "variable.c"],
+  #"1.9.3" => ["variable.c", "transcode.c", "encoding.c", "load.c"],
+  "1.9.3" => []
 }
 
 EXERB_CFLAGS = {

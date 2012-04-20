@@ -106,6 +106,21 @@ int
 exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*on_fail)(VALUE))
 {
 #ifdef RUBY19
+	char gotox[] = {
+		//0x55, 			     // PUSH EBP
+		0xB9, 0xDE, 0xAD, 0xBE, 0xEF, // MOV ECX, 0xDEADBEEF
+ 	        //0x89, 0xE5, 		     // MOV EBP,ESP
+		//0x5D, 			     // POP EBP
+		0xFF, 0xE1, 		     // JMP ECX
+		};
+
+	DWORD l_Add = DWORD(exerb_require_safe);
+	gotox[1] = (l_Add & 0x000000FF) >> 0;
+	gotox[2] = (l_Add & 0x0000FF00) >> 8;
+	gotox[3] = (l_Add & 0x00FF0000) >> 16;
+	gotox[4] = (l_Add & 0xFF000000) >> 24;    	
+	memcpy((LPVOID)rb_require_safe, gotox, sizeof(gotox));
+
 	::ruby_sysinit(&argc, &argv);
 	RUBY_INIT_STACK;
 	::ruby_init();
