@@ -14,7 +14,10 @@ module Exerb::Utility2
     reject_list << File.expand_path(__FILE__)
 
     if RUBY_VERSION == "1.9.3"
-      ['enc/trans/utf_16_32.so', 'enc/trans/single_byte.so'].each do |enc|
+      ['enc/encdb.so', 'enc/utf_16le.so',
+        'enc/trans/transdb.so', 'enc/trans/utf_16_32.so',
+        'enc/trans/single_byte.so'].each do |enc|
+
         unless $LOADED_FEATURES.find { |f| f.include?(enc) }
           $LOADED_FEATURES << enc
         end
@@ -95,6 +98,8 @@ module Exerb::Utility2
   end
 
   def self.detected_libraries
+    require "rbconfig"
+
     exec_prefix = RbConfig::CONFIG["exec_prefix"]
     libruby_so  = RbConfig::CONFIG["LIBRUBY_SO"]
     loaded      = loaded_libraries
