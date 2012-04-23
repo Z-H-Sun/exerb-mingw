@@ -13,7 +13,7 @@ SUPPORTED_VERSIONS = {
   "1.8.6" => 383,
   "1.8.7" => 330,
   # "1.9.2" => 136,
-  "1.9.3" => 0,
+  "1.9.3" => 179,
 }
 
 NEEDS_PATCHING = {
@@ -66,7 +66,7 @@ C.cc = "#{c['CC'] || 'gcc'}"
 C.cflags = "#{c['CFLAGS'] || '-Os'}"
 C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
 C.exerb_cflags = "#{EXERB_CFLAGS[RUBY_VERSION]}"
-C.cppflags = "#{c['CPPFLAGS']} -static-libgcc"
+C.cppflags = "#{c['CPPFLAGS']} -static-libgcc -static-libstdc++"
 C.incflags = "-Isrc/mingw"
 if c['rubyhdrdir']
   C.incflags = "#{C.incflags} -I#{c['rubyhdrdir']}/#{c['arch']} -I#{c['rubyhdrdir']}" if c['rubyhdrdir']
