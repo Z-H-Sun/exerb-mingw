@@ -10,10 +10,10 @@
 
 #ifdef RUBY19
 #include <internal.h>
-extern "C" {
+//extern "C" {
 // 1.9.2 had yarvcore.h, renamed to vm_core.h in 1.9.3
 //  #include <vm_core.h> 
-}
+//}
 #endif
 
 
@@ -67,10 +67,10 @@ static void exerb_setup_kcode();
 static void exerb_setup_resource_library();
 static void exerb_execute();
 static void exerb_cleanup();
+static void exerb_redirect(LPVOID src, LPVOID dest);
 extern "C" VALUE exerb_require(VALUE fname);
 #ifdef RUBY19
 extern "C" VALUE exerb_require_safe(VALUE fname, int safe);
-
 #endif
 static bool exerb_find_ruby_pre_loaded(const VALUE filename);
 static bool exerb_find_file_pre_loaded(const VALUE filename, VALUE *feature, LOADED_LIBRARY_ENTRY **loaded_library_entry);
@@ -105,27 +105,9 @@ static FARPROC WINAPI exerb_hook_get_proc_address(HMODULE module, LPCTSTR procna
 int
 exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*on_fail)(VALUE))
 {
-#ifdef RUBY19
-	DWORD protect = 0, dummy = 0;	
+        exerb_redirect((LPVOID)rb_require_safe, (LPVOID)exerb_require_safe);
 
-	char gotox[] = {
-	//	0x55, 			     // PUSH EBP    //
-		0xB9, 0xDE, 0xAD, 0xBE, 0xEF, // MOV ECX, 0xDEADBEEF
- 	//      0x89, 0xE5, 		     // MOV EBP,ESP //
-	//	0x5D, 			     // POP EBP     //
-		0xFF, 0xE1, 		     // JMP ECX
-		};
-
-	DWORD l_Add = DWORD(exerb_require_safe);
-	gotox[1] = (l_Add & 0x000000FF) >> 0;
-	gotox[2] = (l_Add & 0x0000FF00) >> 8;
-	gotox[3] = (l_Add & 0x00FF0000) >> 16;
-	gotox[4] = (l_Add & 0xFF000000) >> 24;    	
-
-	::VirtualProtect((void*)rb_require_safe, sizeof(gotox), PAGE_READWRITE, &protect);
-	memcpy((LPVOID)rb_require_safe, gotox, sizeof(gotox));
-	::VirtualProtect((void*)rb_require_safe, sizeof(gotox), protect, &dummy);
-
+#ifdef RUBY19        
 	::ruby_sysinit(&argc, &argv);
 	RUBY_INIT_STACK;
 	::ruby_init();
@@ -291,6 +273,7 @@ exerb_cleanup()
 }
 
 #ifdef RUBY19
+
 extern "C" VALUE
 exerb_require_safe(VALUE fname, int safe)
 {
@@ -891,6 +874,31 @@ exerb_hook_get_proc_address(HMODULE module, LPCTSTR procname)
 	}
 
 	return ::GetProcAddress(module, procname);
+}
+
+/* This works for cdecl functions; "thiscall" and "register" use ECX */
+/* Old (src) function must have 7 buytes of code or more to receive redirect asm code */
+/* Old (src) function is destroyed, it will allways redirect  */
+static void
+exerb_redirect(LPVOID src, LPVOID dest)
+{
+        DWORD protect = 0, dummy = 0;
+
+        char gotox[] = {
+                0xB9, 0x00, 0x00, 0x00, 0x00, // MOV ECX, 0x00000000 ; store 0 pointer into ECX
+                0xFF, 0xE1,                   // JMP ECX ; jump to ECX
+                };
+
+        // Replace 0 with dest
+        DWORD l_Add = DWORD(dest);
+        gotox[1] = (l_Add & 0x000000FF) >> 0;
+        gotox[2] = (l_Add & 0x0000FF00) >> 8;
+        gotox[3] = (l_Add & 0x00FF0000) >> 16;
+        gotox[4] = (l_Add & 0xFF000000) >> 24;
+
+        ::VirtualProtect(src, sizeof(gotox), PAGE_READWRITE, &protect);
+        memcpy(src, gotox, sizeof(gotox));
+        ::VirtualProtect(src, sizeof(gotox), protect, &dummy);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
