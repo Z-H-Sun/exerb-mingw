@@ -65,12 +65,6 @@ static void exerb_setup_kcode();
 static void exerb_setup_resource_library();
 static void exerb_execute();
 static void exerb_cleanup();
-VALUE exerb_require(VALUE fname);
-VALUE __wrap_rb_require(VALUE fname);
-#ifdef RUBY19
-VALUE __wrap_rb_require_safe(VALUE fname, int safe);
-VALUE exerb_require_safe(VALUE fname, int safe);
-#endif
 static int exerb_find_ruby_pre_loaded(const VALUE filename);
 static int exerb_find_file_pre_loaded(const VALUE filename, VALUE *feature, LOADED_LIBRARY_ENTRY **loaded_library_entry);
 static int exerb_find_file_inside(const VALUE filename, WORD *id, VALUE *feature, VALUE *realname);
@@ -147,6 +141,9 @@ exerb_main_in_protect(VALUE on_init_proc)
 
 	void (*on_init)(VALUE, VALUE, VALUE) = (void(*)(VALUE, VALUE, VALUE))NUM2UINT(on_init_proc);
 	if ( on_init ) on_init(rb_stdin, rb_stdout, rb_stderr);
+
+        /* Hack require */
+        rb_define_global_function("require", exerb_rb_f_require, 1);
 
 	exerb_mapping();
 	exerb_setup_kcode();
@@ -270,19 +267,13 @@ exerb_cleanup()
 }
 
 VALUE
-__wrap_rb_require(VALUE fname)
+exerb_rb_f_require(VALUE obj, VALUE fname)
 {
-        return exerb_require(fname);
+        printf("my_require: %s\n", RSTRING_PTR(fname));        
+        return exerb_require_safe(fname, rb_safe_level());
 }
-
 
 #ifdef RUBY19
-VALUE
-__wrap_rb_require_safe(VALUE fname, int safe)
-{
-        return exerb_require(fname);
-}
-
 VALUE
 exerb_require_safe(VALUE fname, int safe)
 {
@@ -298,7 +289,6 @@ exerb_require(VALUE fname)
 #else
 	Check_SafeStr(fname);
 #endif
-
 	LOADED_LIBRARY_ENTRY *loaded_library_entry = NULL;
 	WORD id = 0;
 	VALUE feature = Qnil, realname = Qnil;

@@ -82,4 +82,10 @@ typedef struct {
 #define RSTRING_LEN(value) RSTRING(value)->len
 #endif
 
+VALUE exerb_rb_f_require(VALUE obj, VALUE fname);
+VALUE exerb_require(VALUE fname);
+#ifdef RUBY19
+VALUE exerb_require_safe(VALUE fname, int safe);
+#endif
+
 #endif /* EXERB_H */
