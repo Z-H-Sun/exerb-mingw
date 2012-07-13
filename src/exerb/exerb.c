@@ -758,10 +758,24 @@ exerb_replace_import_function(const HMODULE module)
 	FARPROC get_module_handle     = GetProcAddress(kernel32, "GetModuleHandleA");
 	FARPROC get_proc_address_proc = GetProcAddress(kernel32, "GetProcAddress");
 
+	HMODULE self                  = GetModuleHandle(NULL);
+	FARPROC rb_require_proc       = GetProcAddress(self, "rb_require");
+
+#ifdef RUBY19
+	FARPROC rb_require_safe_proc  = GetProcAddress(self, "rb_require_safe");
+#endif
+
 	exerb_replace_import_function_thunk(module, load_library_proc,     (FARPROC)exerb_hook_load_library);
 	exerb_replace_import_function_thunk(module, load_library_ex_proc,  (FARPROC)exerb_hook_load_library_ex);
 	exerb_replace_import_function_thunk(module, get_module_handle,     (FARPROC)exerb_hook_get_module_handle);
 	exerb_replace_import_function_thunk(module, get_proc_address_proc, (FARPROC)exerb_hook_get_proc_address);
+
+	// replace rb_require and rb_require_safe used by extension with own one
+	exerb_replace_import_function_thunk(module, rb_require_proc, (FARPROC)rb_require);
+
+#ifdef RUBY19
+	exerb_replace_import_function_thunk(module, rb_require_safe_proc, (FARPROC)rb_require_safe);
+#endif
 }
 
 static int
