@@ -8,13 +8,6 @@
 #include "utility.h"
 #include "resource.h"
 
-#ifdef RUBY19
-  #include <internal.h>
-// 1.9.2 had yarvcore.h, renamed to vm_core.h in 1.9.3
-//#include <vm_core.h> 
-#endif
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef struct {
@@ -53,6 +46,13 @@ VALUE rb_load_path;
 VALUE rb_argv0;
 #ifndef RUBY19
 VALUE rb_progname;
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+
+#ifdef RUBY19
+/* miniprelude.c, prelude.c */
+void Init_prelude(void);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
