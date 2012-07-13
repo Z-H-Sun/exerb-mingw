@@ -1,4 +1,8 @@
 // $Id: exerb.h,v 1.42 2007/02/26 10:20:44 yuya Exp $
+#ifndef EXERB_H
+#define EXERB_H 1 
+
+#include <windows.h>
 
 #pragma pack(push, 1)
 
@@ -51,7 +55,7 @@ typedef struct {
 
 #pragma pack(pop)
 
-typedef VALUE (*RUBY_PROC)(...);
+//typedef VALUE (*RUBY_PROC)(...);
 
 #define ARCHIVE_HEADER_SIGNATURE1          0x52455845
 #define ARCHIVE_HEADER_SIGNATURE2          0x04000042
@@ -77,3 +81,11 @@ typedef VALUE (*RUBY_PROC)(...);
 #ifndef RSTRING_LEN
 #define RSTRING_LEN(value) RSTRING(value)->len
 #endif
+
+VALUE exerb_rb_f_require(VALUE obj, VALUE fname);
+VALUE exerb_require(VALUE fname);
+#ifdef RUBY19
+VALUE exerb_require_safe(VALUE fname, int safe);
+#endif
+
+#endif /* EXERB_H */

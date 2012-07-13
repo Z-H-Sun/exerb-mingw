@@ -18,7 +18,7 @@ SUPPORTED_VERSIONS = {
 NEEDS_PATCHING = {
   "1.8.6" => ["eval.c", "variable.c"],
   "1.8.7" => ["eval.c", "variable.c"],
-  "1.9.3" => ["variable.c", "transcode.c", "encoding.c", "load.c"],
+  "1.9.3" => []
 }
 
 EXERB_CFLAGS = {
@@ -29,7 +29,6 @@ RUBY_SRC_DIR = nil
 RUBY_SRC_MISSING = {
   "1.8.6" => ["fileblocks.c", "crypt.c", "flock.c"],
   "1.8.7" => ["fileblocks.c", "crypt.c", "flock.c"],
-  # "1.9.2" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c"],
   "1.9.3" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c", "prelude.c"],
 }
 
@@ -58,7 +57,7 @@ RUBY_SRC_IGNORE = [
 
 C = OpenStruct.new
 c = RbConfig::CONFIG
-c['CFLAGS'] = ' -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings -Werror=declaration-after-statement '
+c['CFLAGS'] = ' -std=gnu99 -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings '
 C.cc = "#{c['CC'] || 'gcc'}"
 C.cflags = "#{c['CFLAGS'] || '-Os'}"
 C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
@@ -71,7 +70,7 @@ else
   C.incflags = "#{C.incflags} -I#{c['archdir']}"
 end
 C.ldflags = "-L#{c['libdir']}"
-C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack,0x02000000'}"
+C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack=0x02000000,--wrap=rb_reqire_safe,--wrap=rb_require'}"
 C.rubylib = "#{c['LIBRUBYARG_STATIC']}"
 C.libs = "#{c['LIBS']}"
 C.ver = RUBY_VERSION.gsub('.','')
@@ -123,7 +122,7 @@ end
 
 def link_cpp(target, options)
   sources = options[:sources]
-  cc = 'g++'
+  cc = 'gcc'
   cflags = "#{C.cflags} #{C.xcflags} #{C.exerb_cflags} #{C.cppflags} #{C.incflags}"
   ldflags = "#{C.ldflags} #{C.xldflags}"
   dllflags = options[:isdll] ? "-shared" : ""
@@ -246,7 +245,7 @@ if RUBY_SRC_DIR
   # TODO: ruby 1.9 requires builtin encodings + prelude.c
   ruby_lib = "tmp/libruby#{C.ver}.a"
 else
-  unless C.patchlevel == RUBY_PATCHLEVEL
+  unless (C.patchlevel == RUBY_PATCHLEVEL) or (C.patchlevel < 0)
     fail <<-END
 Ruby #{RUBY_VERSION}-p#{C.patchlevel} expected, but you are running #{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}.
 Try updating relevant files in #{C.src_dir} from ruby source tarball
@@ -261,10 +260,10 @@ ruby_src_patched = ruby_src_unpatched.map { |name| "tmp/patched/#{File.basename(
 ruby_src += ruby_src_patched
 ruby_obj = ruby_src.map { |name| "tmp/#{File.basename(name).gsub(/\.c\Z/i, '.o')}" }
 
-lib_sources = Dir["src/exerb/{exerb,module,utility}.cpp"] + (ruby_lib ? [ruby_lib] : ruby_obj)
+lib_sources = Dir["src/exerb/{exerb,module,utility}.c"] + (ruby_lib ? [ruby_lib] : ruby_obj)
 dll_sources = [file_resource_dll_o]
-cui_sources = ["src/exerb/cui.cpp", file_resource_cui_o]
-gui_sources = ["src/exerb/gui.cpp", file_resource_gui_o]
+cui_sources = ["src/exerb/cui.c", file_resource_cui_o]
+gui_sources = ["src/exerb/gui.c", file_resource_gui_o]
 
 zip(ruby_src_patched, ruby_src_unpatched) do |target, source|
   patch_rb_require target, source

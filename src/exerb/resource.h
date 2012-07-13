@@ -1,4 +1,6 @@
 // $Id: resource.h,v 1.14 2010/12/26 00:03:43 arton Exp $
+#ifndef RESOURCE_H
+#define RESOURCE_H 1
 
 #define RT_EXERB                        100
 #define ID_EXERB                        1
@@ -16,3 +18,5 @@
 
 #define EXERB_RES_EXERB_VERSION1 5,3,0,0
 #define EXERB_RES_EXERB_VERSION2 "5.3.0"
+
+#endif /* RESOURCE_H */
