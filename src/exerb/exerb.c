@@ -269,16 +269,8 @@ exerb_cleanup()
 VALUE
 exerb_rb_f_require(VALUE obj, VALUE fname)
 {
-        return exerb_require_safe(fname, rb_safe_level());
-}
-
-#ifdef RUBY19
-VALUE
-exerb_require_safe(VALUE fname, int safe)
-{
 	return exerb_require(fname);
 }
-#endif
 
 VALUE
 exerb_require(VALUE fname)

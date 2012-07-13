@@ -3,7 +3,7 @@
 #include "ruby.h"
 #include "exerb.h"
 
-VALUE __real_rb_require(const char *fname);
+VALUE __real_rb_require(const char *);
 #ifdef RUBY19
 VALUE __real_rb_require_safe(VALUE, int);
 #endif
@@ -13,8 +13,7 @@ __wrap_rb_require(const char *fname)
 {
         VALUE fn = rb_str_new2(fname);
         OBJ_FREEZE(fn);
-        return exerb_require_safe(fn, rb_safe_level());
-        // return __real_rb_require(fname);
+        return exerb_require(fn);
 }
 
 #ifdef RUBY19
@@ -22,7 +21,7 @@ __wrap_rb_require(const char *fname)
 VALUE
 __wrap_rb_require_safe(VALUE fname, int safe)
 {
-        return exerb_require_safe(fname, safe);
+        return exerb_require(fname);
 }
 
 #endif
