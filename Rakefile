@@ -62,7 +62,7 @@ C.cc = "#{c['CC'] || 'gcc'}"
 C.cflags = "#{c['CFLAGS'] || '-Os'}"
 C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
 C.exerb_cflags = "#{EXERB_CFLAGS[RUBY_VERSION]}"
-C.cppflags = "#{c['CPPFLAGS']} -static-libgcc"
+C.cppflags = c['CPPFLAGS']
 C.incflags = "-Isrc/mingw"
 if c['rubyhdrdir']
   C.incflags = "#{C.incflags} -I#{c['rubyhdrdir']}/#{c['arch']} -I#{c['rubyhdrdir']}" if c['rubyhdrdir']
