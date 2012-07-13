@@ -269,7 +269,6 @@ exerb_cleanup()
 VALUE
 exerb_rb_f_require(VALUE obj, VALUE fname)
 {
-        printf("my_require: %s\n", RSTRING_PTR(fname));        
         return exerb_require_safe(fname, rb_safe_level());
 }
 

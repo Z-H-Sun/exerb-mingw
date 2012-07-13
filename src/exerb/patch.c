@@ -22,9 +22,7 @@ __wrap_rb_require(const char *fname)
 VALUE
 __wrap_rb_require_safe(VALUE fname, int safe)
 {
-        //printf("my_require: %s\n", RSTRING_PTR(fname));
         return exerb_require_safe(fname, safe);
-        //return __real_rb_require_safe(fname, safe);
 }
 
 #endif
