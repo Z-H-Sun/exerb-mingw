@@ -12,20 +12,17 @@ require 'rake/clean'
 SUPPORTED_VERSIONS = {
   "1.8.6" => 383,
   "1.8.7" => 330,
-  # "1.9.2" => 136,
-  "1.9.3" => 0,
+  "1.9.3" => 194,
 }
 
 NEEDS_PATCHING = {
   "1.8.6" => ["eval.c", "variable.c"],
   "1.8.7" => ["eval.c", "variable.c"],
-  # "1.9.2" => ["encoding.c", "load.c", "variable.c"],
   "1.9.3" => ["variable.c", "transcode.c", "encoding.c", "load.c"],
 }
 
 EXERB_CFLAGS = {
-  "1.9.2" => "-DRUBY19",
-  "1.9.3" => "-DRUBY19",  
+  "1.9.3" => "-DRUBY19"
 }
 
 RUBY_SRC_DIR = nil
@@ -35,6 +32,7 @@ RUBY_SRC_MISSING = {
   # "1.9.2" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c"],
   "1.9.3" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c", "prelude.c"],
 }
+
 RUBY_SRC_IGNORE = [
   # 1.8
   "main.c",

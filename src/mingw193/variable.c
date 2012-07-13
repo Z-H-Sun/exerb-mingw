@@ -2,7 +2,7 @@
 
   variable.c -
 
-  $Author$
+  $Author: marcandre $
   created at: Tue Apr 19 23:55:15 JST 1994
 
   Copyright (C) 1993-2007 Yukihiro Matsumoto
@@ -1666,10 +1666,9 @@ rb_public_const_get_at(VALUE klass, ID id)
  *     remove_const(sym)   -> obj
  *
  *  Removes the definition of the given constant, returning that
- *  constant's value.  Although predefined classes/modules also can be
- *  removed, they just can't be refered with the names but still
- *  exist.  It could cause very severe confusion.
- *  Feel Free to Shoot Your Own Foot.
+ *  constant's previous value.  If that constant referred to
+ *  a module, this will not change that module's name and can lead
+ *  to confusion.
  */
 
 VALUE
@@ -1952,13 +1951,22 @@ set_const_visibility(VALUE mod, int argc, VALUE *argv, rb_const_flag_t flag)
 		 "Insecure: can't change constant visibility");
     }
 
+    if (argc == 0) {
+	rb_warning("%s with no argument is just ignored", rb_id2name(rb_frame_callee()));
+    }
+
     for (i = 0; i < argc; i++) {
-	id = rb_to_id(argv[i]);
-	if (RCLASS_CONST_TBL(mod) && st_lookup(RCLASS_CONST_TBL(mod), (st_data_t)id, &v)) {
+	VALUE val = argv[i];
+	id = rb_to_id(val);
+	if (RCLASS_CONST_TBL(mod) &&
+	    st_lookup(RCLASS_CONST_TBL(mod), (st_data_t)id, &v)) {
 	    ((rb_const_entry_t*)v)->flag = flag;
-	    return;
 	}
-	rb_name_error(id, "constant %s::%s not defined", rb_class2name(mod), rb_id2name(id));
+	else {
+	    if ( i > 0 )
+		rb_clear_cache_by_class(mod);
+	    rb_name_error(id, "constant %s::%s not defined", rb_class2name(mod), rb_id2name(id));
+	}
     }
     rb_clear_cache_by_class(mod);
 }
