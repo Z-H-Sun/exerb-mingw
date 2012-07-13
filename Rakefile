@@ -70,7 +70,7 @@ else
   C.incflags = "#{C.incflags} -I#{c['archdir']}"
 end
 C.ldflags = "-L#{c['libdir']}"
-C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack=0x02000000,--wrap=rb_reqire_safe,--wrap=rb_require'}"
+C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack=0x02000000,--wrap=rb_require_safe,--wrap=rb_require'}"
 C.rubylib = "#{c['LIBRUBYARG_STATIC']}"
 C.libs = "#{c['LIBS']}"
 C.ver = RUBY_VERSION.gsub('.','')
