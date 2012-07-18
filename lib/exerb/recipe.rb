@@ -149,8 +149,8 @@ class Exerb::Recipe
     flag = ([entry.type] + entry.flag).inject(0) { |a, b| a | b }
 
     if entry.type == Exerb::FileTable::Entry::FLAG_TYPE_COMPILED_SCRIPT
-      src  = File.open(filepath, "rb") { |file| file.read }
-      iseq = VM::InstructionSequence.compile(src)
+      src  = File.binread(filepath)
+      iseq = RubyVM::InstructionSequence.compile(src, internal_name)
       bin  = Marshal.dump(iseq.to_a)
       archive.add(internal_name, bin, flag)
     else

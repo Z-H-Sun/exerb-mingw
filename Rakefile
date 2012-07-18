@@ -22,7 +22,7 @@ NEEDS_PATCHING = {
 }
 
 EXERB_CFLAGS = {
-  "1.9.3" => "-DRUBY19"
+  "1.9.3" => "-DRUBY19 -DRUBY19_COMPILED_CODE"
 }
 
 RUBY_SRC_DIR = nil

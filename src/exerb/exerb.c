@@ -55,6 +55,11 @@ VALUE rb_progname;
 void Init_prelude(void);
 #endif
 
+#ifdef RUBY19_COMPILED_CODE
+/* not exposed by Ruby headers (only in iseq.h), so we define it here */
+VALUE rb_iseq_load(VALUE data, VALUE parent, VALUE opt);
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*on_fail)(VALUE));
@@ -473,11 +478,10 @@ exerb_load_ruby_script_from_file(const char *filepath)
 static VALUE
 exerb_load_compiled_script(const FILE_ENTRY_HEADER *file_entry)
 {
-	ID id_load = rb_intern("load");
 	ID id_eval = rb_intern("eval");
 	const VALUE code     = rb_str_new(exerb_get_file_from_entry(file_entry), file_entry->size_of_file);
 	const VALUE iseq_ary = rb_marshal_load(code);
-	const VALUE iseq     = rb_funcall(rb_cISeq, id_load, 1, iseq_ary);
+	const VALUE iseq     = rb_iseq_load(iseq_ary, Qnil, Qnil);
 
 	return rb_funcall(iseq, id_eval, 0);
 }
