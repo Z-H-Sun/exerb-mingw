@@ -1,7 +1,16 @@
 // $Id: exerb.cpp,v 1.198 2009/09/08 12:25:47 arton Exp $
 
 #include <ruby.h>
-#include <crtdbg.h>
+
+/* Use crtdbg with Visual Studio or make it no-op */
+#ifdef _MSC_VER
+# include <crtdbg.h>
+#else
+# define _CRT_WARN
+# define _RPT1(...)
+# define _RPT2(...)
+# define _RPT3(...)
+#endif
 
 #include "exerb.h"
 #include "module.h"
