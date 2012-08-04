@@ -113,7 +113,7 @@ static FARPROC WINAPI exerb_hook_get_proc_address(HMODULE module, LPCTSTR procna
 int
 exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*on_fail)(VALUE))
 {
-#ifdef RUBY19        
+#ifdef RUBY19
 	ruby_sysinit(&argc, &argv);
 	RUBY_INIT_STACK;
 	ruby_init();
@@ -764,7 +764,7 @@ exerb_replace_import_function(const HMODULE module)
 	exerb_replace_import_function_thunk(module, get_module_handle,     (FARPROC)exerb_hook_get_module_handle);
 	exerb_replace_import_function_thunk(module, get_proc_address_proc, (FARPROC)exerb_hook_get_proc_address);
 
-	// replace rb_require and rb_require_safe used by extension with own one
+	// replace rb_require and rb_require_safe used by extension with ours
 	exerb_replace_import_function_thunk(module, rb_require_proc, (FARPROC)rb_require);
 
 #ifdef RUBY19
@@ -846,7 +846,7 @@ exerb_hook_get_module_handle(LPCTSTR filename)
 {
 	_RPT1(_CRT_WARN, "exerb_hook_get_module_handle('%s')\n", filename);
 
-	if ( filename && (stricmp(filename, EXERB_LIBRUBY_NAME)     == 0 ||
+	if ( filename && (stricmp(filename, EXERB_LIBRUBY_NAME) == 0 ||
 	                  stricmp(filename, EXERB_LIBRUBY_SO) == 0) ) {
 		return GetModuleHandle(NULL);
 	}
