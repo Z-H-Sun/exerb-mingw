@@ -66,7 +66,7 @@ def link_cpp(target, options)
   rubylib = (options[:rubylib] || C.rubylib)
   libs = C.libs
   cmdline = "#{cc} #{cflags} #{ldflags} #{dllflags} #{guiflags} #{dldflags} #{impflags} -s -o #{target} #{sources.join(' ')} #{rubylib} #{libs}"
-  file target => sources do
+  file target => sources + Array(options[:dependencies]) do
     mkdir_p File.dirname(options[:implib]) if options[:implib]
     mkdir_p File.dirname(target)
     sh cmdline
@@ -110,6 +110,24 @@ def make_def(target, source_lib)
   end
 end
 
+def make_config(target, libruby_name, libruby_so)
+  file target do
+    puts "generating header #{target}"
+    File.open(target, "w") do |f|
+      f.write <<-EOH.gsub(/^\s+/, '')
+        #ifndef _EXERB_CONFIG_H_
+        #define _EXERB_CONFIG_H_
+
+        #define EXERB_LIBRUBY_NAME "#{libruby_name}"
+        #define EXERB_LIBRUBY_SO   "#{libruby_so}"
+
+        #endif /* _EXERB_CONFIG_H_ */
+      EOH
+    end
+  end
+  CLEAN.include target
+end
+
 # Ruby 1.9.1 doesn't have SyncEnumerator
 # This function is inspired by Python's zip
 def zip(*enums)
@@ -127,6 +145,7 @@ def zip(*enums)
 end
 
 exerb_dll_base        = "exerb53"
+exerb_config_header   = "src/exerb/config.h"
 file_resource_rc      = "src/exerb/resource.rc"
 file_resource_dll_o   = "tmp/resource_dll.o"
 file_resource_cui_o   = "tmp/resource_cui.o"
@@ -147,18 +166,20 @@ gui_sources = ["src/exerb/gui.c", file_resource_gui_o]
 
 make_resource file_resource_dll_o, file_resource_rc, "RUNTIME"
 
+make_config exerb_config_header, c["RUBY_SO_NAME"], c["LIBRUBY_SO"]
+
 make_def file_exerb_def, File.join(c["libdir"], c["LIBRUBY_A"])
 make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
 
-link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources + [file_exerb_def]), :isdll => true, :implib => file_exerb_lib
+link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources + [file_exerb_def]), :dependencies => exerb_config_header, :isdll => true, :implib => file_exerb_lib
 
 make_resource file_resource_cui_o, file_resource_rc, "CUI"
-link_cpp file_ruby_cui, :sources => (cui_sources + lib_sources + [file_exerb_def])
-link_cpp file_ruby_cui_rt, :sources => (cui_sources + [file_exerb_lib]), :rubylib => ""
+link_cpp file_ruby_cui, :sources => (cui_sources + lib_sources + [file_exerb_def]), :dependencies => exerb_config_header
+link_cpp file_ruby_cui_rt, :sources => (cui_sources + [file_exerb_lib]), :rubylib => "", :dependencies => exerb_config_header
 
 make_resource file_resource_gui_o, file_resource_rc, "GUI"
-link_cpp file_ruby_gui, :sources => (gui_sources + lib_sources + [file_exerb_def]), :gui => true
-link_cpp file_ruby_gui_rt, :sources => (gui_sources + [file_exerb_lib]), :rubylib => "", :gui => true
+link_cpp file_ruby_gui, :sources => (gui_sources + lib_sources + [file_exerb_def]), :gui => true, :dependencies => exerb_config_header
+link_cpp file_ruby_gui_rt, :sources => (gui_sources + [file_exerb_lib]), :rubylib => "", :gui => true, :dependencies => exerb_config_header
 
 task :default => [
   file_ruby_cui,
