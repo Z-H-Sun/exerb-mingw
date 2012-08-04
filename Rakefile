@@ -13,11 +13,16 @@ unless RUBY_VERSION >= "1.9.3"
   fail "You need at least Ruby 1.9.3 to compile exerb-mingw."
 end
 
+# Include vendored scripts
+$LOAD_PATH.unshift File.expand_path("../vendor", __FILE__)
+require "mkexports"
+
 EXERB_CFLAGS = "-DRUBY19 -DRUBY19_COMPILED_CODE"
 
 C = OpenStruct.new
 c = RbConfig::CONFIG
 c['CFLAGS'] = ' -std=gnu99 -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings '
+C.arch = c["arch"]
 C.cc = "#{c['CC'] || 'gcc'}"
 C.cflags = "#{c['CFLAGS'] || '-Os'}"
 C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
@@ -58,35 +63,19 @@ def link_cpp(target, options)
   guiflags = options[:gui] ? "-mwindows" : ""
   dldflags = options[:isdll] ? "-Wl,--enable-auto-image-base,--enable-auto-import,--export-all" : ""
   impflags = options[:implib] ? "-Wl,--out-implib=#{options[:implib]}" : ""
-  defflags = options[:def] ? "-Wl,--output-def=#{options[:def]}" : ""
   rubylib = (options[:rubylib] || C.rubylib)
   libs = C.libs
-  cmdline = "#{cc} #{cflags} #{ldflags} #{dllflags} #{guiflags} #{dldflags} #{impflags} #{defflags} -s -o #{target} #{sources.join(' ')} #{rubylib} #{libs}"
+  cmdline = "#{cc} #{cflags} #{ldflags} #{dllflags} #{guiflags} #{dldflags} #{impflags} -s -o #{target} #{sources.join(' ')} #{rubylib} #{libs}"
   file target => sources do
     mkdir_p File.dirname(options[:implib]) if options[:implib]
-    mkdir_p File.dirname(options[:def]) if options[:def]
     mkdir_p File.dirname(target)
     sh cmdline
     sh "strip -R .reloc #{target}" unless options[:isdll]
   end
   file options[:implib] => target if options[:implib]
-  file options[:def] => target if options[:def]
 end
 
-def make_19def(target, source)
-  file target => source do
-    mkdir_p File.dirname(target)
-    File.open(target, "a") do |out|
-      File.open(source, "r").each_line do |line|
-        case line
-        when /=rb_w32_/
-          out.puts '    ' + line
-        end
-      end
-    end
-  end
-end
-
+# FIXME: is not mapping all the exports
 def make_def_proxy(target, source, proxy)
   file target => source do
     mkdir_p File.dirname(target)
@@ -108,6 +97,16 @@ def make_def_proxy(target, source, proxy)
         end
       end
     end
+  end
+end
+
+def make_def(target, source_lib)
+  file target => [source_lib] do
+    mkdir_p File.dirname(target)
+
+    puts "generating #{target}"
+    exports = Exports.extract([source_lib])
+    Exports.output(target) { |f| f.puts(*exports) }
   end
 end
 
@@ -148,22 +147,18 @@ gui_sources = ["src/exerb/gui.c", file_resource_gui_o]
 
 make_resource file_resource_dll_o, file_resource_rc, "RUNTIME"
 
-link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => file_exerb_def, :implib => file_exerb_lib
-
-make_19def(file_exerb_def, 'src/mingw193/msvcrt-ruby191.def')
-CLEAN.include file_exerb_dll
-
-link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => nil, :implib => file_exerb_lib
+make_def file_exerb_def, File.join(c["libdir"], c["LIBRUBY_A"])
 make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
-link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => nil, :implib => file_exerb_lib
+
+link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources + [file_exerb_def]), :isdll => true, :implib => file_exerb_lib
 
 make_resource file_resource_cui_o, file_resource_rc, "CUI"
 link_cpp file_ruby_cui, :sources => (cui_sources + lib_sources + [file_exerb_def])
-link_cpp file_ruby_cui_rt, :sources => (cui_sources + [file_exerb_lib, file_exerb_rt_def]), :rubylib => ""
+link_cpp file_ruby_cui_rt, :sources => (cui_sources + [file_exerb_lib]), :rubylib => ""
 
 make_resource file_resource_gui_o, file_resource_rc, "GUI"
 link_cpp file_ruby_gui, :sources => (gui_sources + lib_sources + [file_exerb_def]), :gui => true
-link_cpp file_ruby_gui_rt, :sources => (gui_sources + [file_exerb_lib, file_exerb_rt_def]), :rubylib => "", :gui => true
+link_cpp file_ruby_gui_rt, :sources => (gui_sources + [file_exerb_lib]), :rubylib => "", :gui => true
 
 task :default => [
   file_ruby_cui,
