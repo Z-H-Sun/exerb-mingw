@@ -1,6 +1,7 @@
-/data/exerb/*
-/tmp/*
-.config
-InstalledFiles
-*.exe
+*.ex?
 *.sublime-*
+.config
+data
+InstalledFiles
+src/exerb/config.h
+tmp
