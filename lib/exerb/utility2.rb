@@ -13,7 +13,7 @@ module Exerb::Utility2
   def self.loaded_features(reject_list = [])
     reject_list << File.expand_path(__FILE__)
 
-    if RUBY_VERSION == "1.9.3"
+    if RUBY_VERSION >= "1.9.3"
       ['enc/encdb.so', 'enc/utf_16le.so',
         'enc/trans/transdb.so', 'enc/trans/utf_16_32.so',
         'enc/trans/single_byte.so'].each do |enc|
