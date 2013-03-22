@@ -9,97 +9,40 @@ require 'rbconfig'
 require 'ostruct'
 require 'rake/clean'
 
-SUPPORTED_VERSIONS = {
-  "1.8.6" => 383,
-  "1.8.7" => 330,
-  "1.9.3" => 194,
-}
+unless RUBY_VERSION >= "1.9.3"
+  fail "You need at least Ruby 1.9.3 to compile exerb-mingw."
+end
 
-NEEDS_PATCHING = {
-  "1.8.6" => ["eval.c", "variable.c"],
-  "1.8.7" => ["eval.c", "variable.c"],
-  "1.9.3" => ["variable.c", "transcode.c", "encoding.c", "load.c"],
-}
+# Include vendored scripts
+$LOAD_PATH.unshift File.expand_path("../vendor", __FILE__)
+require "mkexports"
 
-EXERB_CFLAGS = {
-  "1.9.3" => "-DRUBY19"
-}
-
-RUBY_SRC_DIR = nil
-RUBY_SRC_MISSING = {
-  "1.8.6" => ["fileblocks.c", "crypt.c", "flock.c"],
-  "1.8.7" => ["fileblocks.c", "crypt.c", "flock.c"],
-  # "1.9.2" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c"],
-  "1.9.3" => ["langinfo.c", "fileblocks.c", "crypt.c", "flock.c", "lgamma_r.c", "strlcpy.c", "strlcat.c", "prelude.c"],
-}
-
-RUBY_SRC_IGNORE = [
-  # 1.8
-  "main.c",
-  "winmain.c",
-  "lex.c",
-  "dmydln.c",
-  # 1.9
-  "blockinlining.c",
-  "dmyencoding.c",
-  "eval_error.c",
-  "eval_jump.c",
-  "golf_prelude.c",
-  "goruby.c",
-  "id.c",
-  "miniprelude.c",
-  "thread_pthread.c",
-  "thread_win32.c",
-  "vm_eval.c",
-  "vm_exec.c",
-  "vm_insnhelper.c",
-  "vm_method.c",
-]
+EXERB_CFLAGS = "-DRUBY19 -DRUBY19_COMPILED_CODE"
 
 C = OpenStruct.new
 c = RbConfig::CONFIG
-c['CFLAGS'] = ' -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings -Werror=declaration-after-statement '
+c['CFLAGS'] = ' -std=gnu99 -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings '
+C.arch = c["arch"]
 C.cc = "#{c['CC'] || 'gcc'}"
 C.cflags = "#{c['CFLAGS'] || '-Os'}"
 C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
-C.exerb_cflags = "#{EXERB_CFLAGS[RUBY_VERSION]}"
-C.cppflags = "#{c['CPPFLAGS']} -static-libgcc"
-C.incflags = "-Isrc/mingw"
+C.exerb_cflags = EXERB_CFLAGS
+C.cppflags = c['CPPFLAGS']
 if c['rubyhdrdir']
-  C.incflags = "#{C.incflags} -I#{c['rubyhdrdir']}/#{c['arch']} -I#{c['rubyhdrdir']}" if c['rubyhdrdir']
+  C.incflags = "-I#{c['rubyhdrdir']}/#{c['arch']} -I#{c['rubyhdrdir']}" if c['rubyhdrdir']
 else
-  C.incflags = "#{C.incflags} -I#{c['archdir']}"
+  C.incflags = "-I#{c['archdir']}"
 end
 C.ldflags = "-L#{c['libdir']}"
-C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack,0x02000000'}"
+C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack=0x02000000,--wrap=rb_require_safe,--wrap=rb_require'}"
 C.rubylib = "#{c['LIBRUBYARG_STATIC']}"
 C.libs = "#{c['LIBS']}"
 C.ver = RUBY_VERSION.gsub('.','')
-C.src_dir = "src/mingw#{C.ver}"
 
 def make_resource(target, source, type)
   file target => source do
     mkdir_p File.dirname(target)
     sh "windres -D#{type} #{source} #{target}"
-  end
-end
-
-def patch_rb_require(target, source)
-  file target => source do
-    mkdir_p File.dirname(target)
-    File.open(target, 'w') do |dst|
-      File.open(source, 'r').each_line do |i|
-        # change require
-        #    return rb_require_safe(fname, ruby_safe_level);
-        #    return exerb_require(fname);
-        m = /\A(\s*return\s*)(rb_require_safe)(.+)\Z/.match(i)
-        if m
-          dst.puts "#{m[1]}exerb_require_safe#{m[3]}"
-        else
-          dst.puts i
-        end
-      end
-    end
   end
 end
 
@@ -111,54 +54,28 @@ def compile_c(target, source)
   end
 end
 
-def make_archive(target, sources)
-  file target => sources do
-    mkdir_p File.dirname(target)
-    rm_f target
-    sources.each do |source|
-      sh "ar q #{target} #{source}"
-    end
-  end
-end
-
 def link_cpp(target, options)
   sources = options[:sources]
-  cc = 'g++'
+  cc = 'gcc'
   cflags = "#{C.cflags} #{C.xcflags} #{C.exerb_cflags} #{C.cppflags} #{C.incflags}"
   ldflags = "#{C.ldflags} #{C.xldflags}"
   dllflags = options[:isdll] ? "-shared" : ""
   guiflags = options[:gui] ? "-mwindows" : ""
   dldflags = options[:isdll] ? "-Wl,--enable-auto-image-base,--enable-auto-import,--export-all" : ""
   impflags = options[:implib] ? "-Wl,--out-implib=#{options[:implib]}" : ""
-  defflags = options[:def] ? "-Wl,--output-def=#{options[:def]}" : ""
   rubylib = (options[:rubylib] || C.rubylib)
   libs = C.libs
-  cmdline = "#{cc} #{cflags} #{ldflags} #{dllflags} #{guiflags} #{dldflags} #{impflags} #{defflags} -s -o #{target} #{sources.join(' ')} #{rubylib} #{libs}"
-  file target => sources do
+  cmdline = "#{cc} #{cflags} #{ldflags} #{dllflags} #{guiflags} #{dldflags} #{impflags} -s -o #{target} #{sources.join(' ')} #{rubylib} #{libs}"
+  file target => sources + Array(options[:dependencies]) do
     mkdir_p File.dirname(options[:implib]) if options[:implib]
-    mkdir_p File.dirname(options[:def]) if options[:def]
     mkdir_p File.dirname(target)
     sh cmdline
     sh "strip -R .reloc #{target}" unless options[:isdll]
   end
   file options[:implib] => target if options[:implib]
-  file options[:def] => target if options[:def]
 end
 
-def make_19def(target, source)
-  file target => source do
-    mkdir_p File.dirname(target)
-    File.open(target, "a") do |out|
-      File.open(source, "r").each_line do |line|
-        case line
-        when /=rb_w32_/
-          out.puts '    ' + line
-        end
-      end
-    end
-  end
-end
-
+# FIXME: is not mapping all the exports
 def make_def_proxy(target, source, proxy)
   file target => source do
     mkdir_p File.dirname(target)
@@ -183,6 +100,34 @@ def make_def_proxy(target, source, proxy)
   end
 end
 
+def make_def(target, source_lib)
+  file target => [source_lib] do
+    mkdir_p File.dirname(target)
+
+    puts "generating #{target}"
+    exports = Exports.extract([source_lib])
+    Exports.output(target) { |f| f.puts(*exports) }
+  end
+end
+
+def make_config(target, libruby_name, libruby_so)
+  file target do
+    puts "generating header #{target}"
+    File.open(target, "w") do |f|
+      f.write <<-EOH.gsub(/^\s+/, '')
+        #ifndef _EXERB_CONFIG_H_
+        #define _EXERB_CONFIG_H_
+
+        #define EXERB_LIBRUBY_NAME "#{libruby_name}"
+        #define EXERB_LIBRUBY_SO   "#{libruby_so}"
+
+        #endif /* _EXERB_CONFIG_H_ */
+      EOH
+    end
+  end
+  CLEAN.include target
+end
+
 # Ruby 1.9.1 doesn't have SyncEnumerator
 # This function is inspired by Python's zip
 def zip(*enums)
@@ -200,6 +145,7 @@ def zip(*enums)
 end
 
 exerb_dll_base        = "exerb53"
+exerb_config_header   = "src/exerb/config.h"
 file_resource_rc      = "src/exerb/resource.rc"
 file_resource_dll_o   = "tmp/resource_dll.o"
 file_resource_cui_o   = "tmp/resource_cui.o"
@@ -213,99 +159,34 @@ file_ruby_cui_rt      = "data/exerb/ruby#{C.ver}crt.exc"
 file_ruby_gui         = "data/exerb/ruby#{C.ver}g.exc"
 file_ruby_gui_rt      = "data/exerb/ruby#{C.ver}grt.exc"
 
-C.patchlevel = SUPPORTED_VERSIONS[RUBY_VERSION]
-C.needs_patching = NEEDS_PATCHING[RUBY_VERSION]
-unless C.patchlevel and C.needs_patching
-  fail <<-END
-Ruby #{RUBY_VERSION} is not yet supported.
-Try copying relevant files from ruby source tarball to #{C.src_dir}
-and update NEEDS_PATCHING and SUPPORTED_VERSIONS at the top of this
-Rakefile.
-  END
-end
-
-ruby_src              = []
-ruby_lib              = nil
-
-if RUBY_SRC_DIR
-  C.cflags = "-Os" # optimize for size
-  C.rubylib = ""
-  C.src_dir = RUBY_SRC_DIR
-  files = Dir["#{RUBY_SRC_DIR}/*.c"] + Dir["#{RUBY_SRC_DIR}/win32/*.c"]
-  files.each do |filename|
-    name = File.basename(filename).downcase
-    next if RUBY_SRC_IGNORE.include? name
-    next if C.needs_patching.include? name
-    ruby_src << filename
-  end
-  if RUBY_SRC_MISSING[RUBY_VERSION]
-    RUBY_SRC_MISSING[RUBY_VERSION].each do |name|
-      ruby_src << "#{RUBY_SRC_DIR}/missing/#{name}"
-    end
-  end
-  # TODO: ruby 1.9 requires builtin encodings + prelude.c
-  ruby_lib = "tmp/libruby#{C.ver}.a"
-else
-  unless C.patchlevel == RUBY_PATCHLEVEL
-    fail <<-END
-Ruby #{RUBY_VERSION}-p#{C.patchlevel} expected, but you are running #{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}.
-Try updating relevant files in #{C.src_dir} from ruby source tarball
-and update SUPPORTED_VERSIONS at the top of this Rakefile.
-    END
-  end
-end
-C.incflags = "#{C.incflags} -I#{C.src_dir}"
-
-ruby_src_unpatched = C.needs_patching.map { |name| "#{C.src_dir}/#{name}" }
-ruby_src_patched = ruby_src_unpatched.map { |name| "tmp/patched/#{File.basename(name)}" }
-ruby_src += ruby_src_patched
-ruby_obj = ruby_src.map { |name| "tmp/#{File.basename(name).gsub(/\.c\Z/i, '.o')}" }
-
-lib_sources = Dir["src/exerb/{exerb,module,utility}.cpp"] + (ruby_lib ? [ruby_lib] : ruby_obj)
+lib_sources = Dir["src/exerb/{exerb,module,utility,patch}.c"]
 dll_sources = [file_resource_dll_o]
-cui_sources = ["src/exerb/cui.cpp", file_resource_cui_o]
-gui_sources = ["src/exerb/gui.cpp", file_resource_gui_o]
-
-zip(ruby_src_patched, ruby_src_unpatched) do |target, source|
-  patch_rb_require target, source
-end
-
-zip(ruby_obj, ruby_src) do |target, source|
-  compile_c target, source
-end
-
-if ruby_lib
-  make_archive ruby_lib, ruby_obj
-end
+cui_sources = ["src/exerb/cui.c", file_resource_cui_o]
+gui_sources = ["src/exerb/gui.c", file_resource_gui_o]
 
 make_resource file_resource_dll_o, file_resource_rc, "RUNTIME"
 
-if RUBY_VERSION == '1.9.3'
-  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => file_exerb_def, :implib => file_exerb_lib
+make_config exerb_config_header, c["RUBY_SO_NAME"], c["LIBRUBY_SO"]
 
-  make_19def(file_exerb_def, 'src/mingw193/msvcrt-ruby191.def')
-  rm_f file_exerb_dll
+make_def file_exerb_def, File.join(c["libdir"], c["LIBRUBY_A"])
+make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
 
-  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => nil, :implib => file_exerb_lib
-  make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
-  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => nil, :implib => file_exerb_lib
-else
-  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :isdll => true, :def => file_exerb_def, :implib => file_exerb_lib
-  make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
-end
+link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources + [file_exerb_def]), :dependencies => exerb_config_header, :isdll => true, :implib => file_exerb_lib
 
 make_resource file_resource_cui_o, file_resource_rc, "CUI"
-link_cpp file_ruby_cui, :sources => (cui_sources + lib_sources + [file_exerb_def])
-link_cpp file_ruby_cui_rt, :sources => (cui_sources + [file_exerb_lib, file_exerb_rt_def]), :rubylib => ""
+link_cpp file_ruby_cui, :sources => (cui_sources + lib_sources + [file_exerb_def]), :dependencies => exerb_config_header
+link_cpp file_ruby_cui_rt, :sources => (cui_sources + [file_exerb_lib]), :rubylib => "", :dependencies => exerb_config_header
 
 make_resource file_resource_gui_o, file_resource_rc, "GUI"
-link_cpp file_ruby_gui, :sources => (gui_sources + lib_sources + [file_exerb_def]), :gui => true
-link_cpp file_ruby_gui_rt, :sources => (gui_sources + [file_exerb_lib, file_exerb_rt_def]), :rubylib => "", :gui => true
+link_cpp file_ruby_gui, :sources => (gui_sources + lib_sources + [file_exerb_def]), :gui => true, :dependencies => exerb_config_header
+link_cpp file_ruby_gui_rt, :sources => (gui_sources + [file_exerb_lib]), :rubylib => "", :gui => true, :dependencies => exerb_config_header
 
-task :default => file_ruby_cui
-task :default => file_ruby_cui_rt
-task :default => file_ruby_gui
-task :default => file_ruby_gui_rt
+task :default => [
+  file_ruby_cui,
+  file_ruby_cui_rt,
+  file_ruby_gui,
+  file_ruby_gui_rt
+]
 
 CLEAN.include('tmp')
 CLOBBER.include('data')
