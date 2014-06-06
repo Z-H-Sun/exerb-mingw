@@ -7,10 +7,10 @@ require 'testcase'
 
 #==============================================================================#
 
-class SocketTestCase < Test::Unit::TestCase
+class SocketTestCase < Minitest::Test
   include ExerbTestCase
 
-  def name
+  def name2
     return 'test-socket'
   end
 

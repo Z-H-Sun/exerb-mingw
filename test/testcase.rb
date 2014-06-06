@@ -2,8 +2,14 @@
 #==============================================================================#
 # $Id: testcase.rb,v 1.23 2008/06/13 23:53:34 arton Exp $
 #==============================================================================#
+gem 'minitest'
+require 'minitest/autorun'
 
-require 'test/unit/testcase'
+libpath = File.expand_path('../../lib', __FILE__)
+unless $:.include?(libpath)
+  $:.unshift(libpath)
+end
+
 require 'exerb/recipe'
 require 'exerb/executable'
 
@@ -12,7 +18,7 @@ require 'exerb/executable'
 module ExerbTestCase
 
   def setup
-    @name = self.name
+    @name = self.name2
     self.setup_exe
   end
 
@@ -20,7 +26,7 @@ module ExerbTestCase
     create_exe(@name)
   end
 
-  def name
+  def name2
     raise(NotImplementedError)
   end
 
