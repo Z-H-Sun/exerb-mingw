@@ -15,10 +15,9 @@ class SocketTestCase < Minitest::Test
   end
 
   def test_socket
-    assert_nothing_thrown("socket") do 
-      read_result(@name)
-    end
-    assert(system('test-socket\test-socket.exe'))
+    ret1 = read_result(@name)
+    ret2 = execute_exe(@name)
+    assert_equal(ret1, ret2)
   end
 
 end # ArgvTestCase
