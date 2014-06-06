@@ -25,13 +25,17 @@ module ExerbTestCase
   end
 
   def create_exe(name, exename = name)
-    ver        = RUBY_VERSION.gsub('.','')
-    corefile   = "../data/exerb/ruby#{ver}c.exc"
-    recipe     = Exerb::Recipe.load("#{name}/#{exename}.exy")
-    archive    = recipe.create_archive()
-    executable = Exerb::Executable.read(corefile)
-    executable.rsrc.add_archive(archive)
-    executable.write("#{name}/#{exename}.exe")
+    Dir.chdir(name) {
+      ver        = RUBY_VERSION.gsub('.','')
+      corefile   = File.expand_path("../../data/exerb/ruby#{ver}c.exc", __FILE__)
+      mkexy = File.expand_path('../../bin/mkexy', __FILE__)
+      `#{Gem.ruby} #{mkexy} --old "old_#{exename}.exy" --  -I. "#{exename}.rb"`
+      recipe     = Exerb::Recipe.load("#{exename}.exy")
+      archive    = recipe.create_archive()
+      executable = Exerb::Executable.read(corefile)
+      executable.rsrc.add_archive(archive)
+      executable.write("#{exename}.exe")
+    }
   end
 
   def execute_cmd(cmd)
