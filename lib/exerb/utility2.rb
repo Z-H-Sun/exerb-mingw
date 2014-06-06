@@ -56,10 +56,12 @@ module Exerb::Utility2
   end
 
   def self.require_name(filename)
-    path = $LOAD_PATH.find { |path| filename.include?(path) }
+    # FIXED BUG, if relative path in $LOAD_PATH. like '.', '..', ..
+    path = $LOAD_PATH.find { |path| File.dirname(filename) == File.expand_path(path) }
+    path = $LOAD_PATH.find { |path| filename.start_with?(File.expand_path(path)) } if !path
     if path
       # remove both the path and the platform from the filename
-      return filename.gsub("#{path}/", "").gsub("#{RUBY_PLATFORM}/", "")
+      return filename.gsub("#{File.expand_path(path)}/", "").gsub("#{RUBY_PLATFORM}/", "")
     end
 
     filename
