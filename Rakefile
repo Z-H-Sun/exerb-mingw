@@ -1,8 +1,9 @@
 begin
   require 'devkit'
+  raise LoadError unless ENV['RI_DEVKIT'] # need RubyInstaller's DevKit, not devkit gem.
 rescue LoadError
   msg = "You need to install the devkit to compile exerb-mingw.\n"
-  msg << "  http://rubygems.org/gems/devkit"
+  msg << "  http://rubyinstaller.org/add-ons/devkit/"
   abort msg
 end
 require 'rbconfig'
