@@ -3,7 +3,6 @@
 # $Id: mkexy.rb,v 1.2 2004/03/25 09:35:25 yuya Exp $
 #==============================================================================#
 
-require 'yaml'
 require 'exerb/utility2'
 
 #==============================================================================#
@@ -24,6 +23,7 @@ END {
   old_path = nil
   old_recipe_file = ENV['old_exy'] || recipe_file
   if File.exists?(old_recipe_file)
+    require 'yaml'
     oldcfg = YAML.load(File.read(old_recipe_file))
     msg = "# from old exy file"
     if oldcfg['general'] && oldcfg['general']['core'] && core != oldcfg['general']['core']
