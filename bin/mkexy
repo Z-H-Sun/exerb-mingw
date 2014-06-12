@@ -9,6 +9,7 @@ require 'optparse'
 
 path1 = File.expand_path('../../lib', __FILE__)
 ENV['old_exy'] = nil
+ENV['exy_zipd'] = nil
 
 OptionParser.new do |opts|
   opts.banner = "MKEXY  from ruby source file generate exy file\n\n" +
@@ -21,6 +22,10 @@ OptionParser.new do |opts|
 
   opts.on("-o", "--old xxx.exy", "from old EXY file find core/resource/path info") do |exy|
     ENV['old_exy'] = exy
+  end
+
+  opts.on("-c", "--compress", "use zlib deflate ruby source file") do |zipd|
+    ENV['exy_zipd'] = 'true'
   end
 
   opts.on("-h", "--help", "Show this message") do |v|

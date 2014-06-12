@@ -13,6 +13,12 @@ BEGIN {
 
 END {
   Dir.chdir($exerb_pwd)
+  if ENV['exy_zipd']
+    require 'zlib'
+    zipd = true
+  else
+    zipd = false
+  end
 
   reject_list = [File.expand_path(__FILE__)]
   file_list   = [['script', $0, $0]] + Exerb::Utility2.loaded_features(reject_list)
@@ -53,6 +59,7 @@ END {
     file.puts("general:")
     file.puts("  startup: #{$0}")
     file.puts("  core: #{core}")
+    file.puts("  zipd: #{zipd}")
     if RUBY_VERSION < "1.9"
       file.puts("  kcode: #{$KCODE.downcase}")
     else
