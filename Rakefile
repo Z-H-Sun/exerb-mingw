@@ -22,7 +22,7 @@ EXERB_CFLAGS = "-DRUBY19 -DRUBY19_COMPILED_CODE"
 
 C = OpenStruct.new
 c = RbConfig::CONFIG
-c['CFLAGS'] = ' -std=gnu99 -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings '
+c['CFLAGS'] = ' -Wall -std=gnu99 -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings '
 C.arch = c["arch"]
 C.cc = "#{c['CC'] || 'gcc'}"
 C.cflags = "#{c['CFLAGS'] || '-Os'}"
