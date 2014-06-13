@@ -23,7 +23,7 @@ END {
   reject_list = [File.expand_path(__FILE__)]
   file_list   = [['script', $0, $0]] + Exerb::Utility2.loaded_features(reject_list)
   recipe_file = File.expand_path($0).sub(/(\.rbw?$|$)/i, '.exy')
-  core = $0 =~ /\.rbw$/ ? "gui" : "cui"
+  core = $0 =~ /\.rbw$/i ? "gui" : "cui"
 
   old_resource = nil
   old_path = nil
