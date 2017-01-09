@@ -122,7 +122,7 @@ exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*o
 	ruby_init();
 	rb_ary_push(rb_load_path, rb_str_new2("."));
 #endif
-	argc = rb_w32_cmdvector(GetCommandLine(), &argv);
+	// argc = rb_w32_cmdvector(GetCommandLine(), &argv);
 	ruby_set_argv(argc - 1, argv + 1);
 	exerb_set_script_name((char *)"exerb");
 

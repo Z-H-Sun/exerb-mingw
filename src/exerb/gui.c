@@ -100,7 +100,7 @@ exerb_replace_io_methods(const VALUE io)
 static VALUE
 rb_exerbio_write(VALUE self, VALUE str)
 {
-	rb_secure(4);
+	rb_secure(1);
 	if ( TYPE(str) != T_STRING ) str = rb_obj_as_string(str);
 	if ( RSTRING_LEN(str) > 0 ) OutputDebugString(RSTRING_PTR(str));
 	return Qnil;
