@@ -19,6 +19,10 @@ end # Exerb
 class Exerb::Win32::Struct::ImageOptionalHeader32 < Exerb::Win32::Struct::Base
 
   FORMAT = 'SCCLLLLLLLLLSSSSSSLLLLSSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL'
+  # Compatibility with 64-bit PE. See https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#optional-header-windows-specific-fields-image-only
+  if [nil].pack('p').size == 8 # 32-bit will give 4
+    FORMAT[56, 4]='QQQQ' # ideally they should be 'J' (pointer-width), which is 32-bit on 32-bit and 64-bit on 64-bit, but this feature is not available till Ruby 2.3
+  end
 
   def initialize
     @magic                            = 0

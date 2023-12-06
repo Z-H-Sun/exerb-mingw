@@ -48,7 +48,7 @@ class Exerb::Resource
   def self.new_from_pe_binary(bin)
     pe     = Exerb::Win32::PeFile.new_from_binary(bin)
     rsrc   = pe.sections.find { |sec| sec.name == '.rsrc' }
-    raise(ExerbError, "a resource section was not found in the core") if rsrc.nil?
+    raise(Exerb::ExerbError, "a resource section was not found in the core") if rsrc.nil?
 
     return self.new_from_binary(bin[rsrc.pointer_to_raw_data, rsrc.virtual_size], rsrc.virtual_address)
   end
