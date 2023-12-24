@@ -5,7 +5,7 @@
 #define RT_EXERB                        100
 #define ID_EXERB                        1
 #define IDD_EXCEPTION                   101
-#define IDI_RUBY                        102
+#define IDI_RUBY                        1
 
 #define ID_CLOSE                        1000
 #define IDC_EDIT_MESSAGE                1001
@@ -16,7 +16,7 @@
 #define IDC_STATIC -1
 #endif
 
-#define EXERB_RES_EXERB_VERSION1 6,0,1,0
-#define EXERB_RES_EXERB_VERSION2 "6.0.1"
+#define EXERB_RES_EXERB_VERSION1 6,1,0,0
+#define EXERB_RES_EXERB_VERSION2 "6.1.0"
 
 #endif /* RESOURCE_H */
