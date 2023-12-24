@@ -4,9 +4,7 @@
 #include "exerb.h"
 
 VALUE __real_rb_require(const char *);
-#ifdef RUBY19
 VALUE __real_rb_require_safe(VALUE, int);
-#endif
 
 VALUE
 __wrap_rb_require(const char *fname)
@@ -16,7 +14,6 @@ __wrap_rb_require(const char *fname)
         return exerb_require(fn);
 }
 
-#ifdef RUBY19
 
 VALUE
 __wrap_rb_require_safe(VALUE fname, int safe)
@@ -24,4 +21,3 @@ __wrap_rb_require_safe(VALUE fname, int safe)
         return exerb_require(fname);
 }
 
-#endif

@@ -217,7 +217,7 @@ exerb_setup_kcode()
 	case ARCHIVE_HEADER_OPTIONS_KCODE_NONE: rb_set_kcode("n"); break;
 	case ARCHIVE_HEADER_OPTIONS_KCODE_EUC:  rb_set_kcode("e"); break;
 	case ARCHIVE_HEADER_OPTIONS_KCODE_SJIS: rb_set_kcode("s"); break;
-	case ARCHIVE_HEADER_OPTIONS_KCODE_UTF8: _from_filerb_set_kcode("u"); break;
+	case ARCHIVE_HEADER_OPTIONS_KCODE_UTF8: rb_set_kcode("u"); break;
 	}
 #else
 	exerb_require(rb_str_new2("enc/encdb"));

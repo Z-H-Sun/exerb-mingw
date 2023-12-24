@@ -1,4 +1,5 @@
 ARGV.unshift("generate")
+require 'rubygems'
 load Gem.bin_path('rake', 'rake')
 ARGV.shift if ARGV.first == "generate"
 
