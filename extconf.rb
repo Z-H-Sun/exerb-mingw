@@ -5,4 +5,4 @@ ARGV.shift if ARGV.first == "generate"
 
 ## ------- fake extensions
 STDERR.puts("==== fake extensions ====")
-File.write('Makefile', "clean:\ndefault:\ninstall:\n")
+open('Makefile', 'w') { |f| f.write("clean:\ndefault:\ninstall:\n") }

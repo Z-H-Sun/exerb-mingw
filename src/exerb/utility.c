@@ -187,8 +187,10 @@ exerb_get_file_from_entry2(const FILE_ENTRY_HEADER *file_entry)
 	if (file_entry->zipd)
 	{
 		VALUE code2;
+		VALUE zlib;
 		rb_require("zlib");
-		code2 = rb_funcall(rb_const_get(rb_cObject, rb_intern("Zlib")), rb_intern("inflate"), 1, code);
+		zlib = rb_const_get(rb_cObject, rb_intern("Zlib"));
+		code2 = rb_funcall(rb_const_get(zlib, rb_intern("Inflate")), rb_intern("inflate"), 1, code);
 		return code2;
 	} else {
 		return code;

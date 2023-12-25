@@ -27,7 +27,7 @@ class Exerb::FileTable
   def add_from_file(id, path, flag)
     return File.open(path, 'rb') { |file|
       if ENV['exy_zipd'] && /\.rbw?$/i =~ path
-        data = Zlib.deflate(file.read, 9)
+        data = Zlib::Deflate.deflate(file.read, 9)
         self.add(id, data, flag, 1)
       else
         self.add(id, file.read, flag)

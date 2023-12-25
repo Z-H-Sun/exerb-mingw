@@ -13,12 +13,13 @@ require 'rake/clean'
 raise('Unknown Ruby version: '+RUBY_VERSION) unless RUBY_VERSION =~ /(\d+)\.(\d+)/
 HIGH_VER_RUBY = (($1.to_i) > 1 or ($2.to_i) > 8) # Ruby >= 1.9
 if HIGH_VER_RUBY
-# Include vendored scripts
-$LOAD_PATH.unshift File.expand_path("../vendor", __FILE__)
-require "mkexports"
-
-EXERB_CFLAGS = "-DRUBY19 -DRUBY19_COMPILED_CODE"
-else EXERB_CFLAGS = '' end # add flags only for Ruby >= 1.9
+  # Include vendored scripts
+  $LOAD_PATH.unshift File.expand_path("../vendor", __FILE__)
+  require "mkexports"
+  EXERB_CFLAGS = "-DRUBY19 -DRUBY19_COMPILED_CODE"
+else
+  EXERB_CFLAGS = '' # add flags only for Ruby >= 1.9
+end
 
 C = OpenStruct.new
 c = RbConfig::CONFIG
@@ -174,12 +175,12 @@ make_config exerb_config_header, c["RUBY_SO_NAME"], c["LIBRUBY_SO"]
 objs_rt = [file_exerb_lib]
 objs = lib_sources + [file_exerb_def]
 if HIGH_VER_RUBY # FIXME: All rt cores won't work properly for Ruby >= 1.9. Since commit 884f462, file_exerb_rt_def have been removed from linking sources, just in order to pass compilation
-make_def file_exerb_def, File.join(c["libdir"], c["LIBRUBY_A"])
-link_cpp file_exerb_dll, :sources => (dll_sources + objs), :dependencies => exerb_config_header, :isdll => true, :implib => file_exerb_lib
+  make_def file_exerb_def, File.join(c["libdir"], c["LIBRUBY_A"])
+  link_cpp file_exerb_dll, :sources => (dll_sources + objs), :dependencies => exerb_config_header, :isdll => true, :implib => file_exerb_lib
 else # revert commit 884f462 for Ruby 1.8
-link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :dependencies => exerb_config_header, :isdll => true, :def => file_exerb_def, :implib => file_exerb_lib
-make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
-objs_rt.push file_exerb_rt_def
+  link_cpp file_exerb_dll, :sources => (dll_sources + lib_sources), :dependencies => exerb_config_header, :isdll => true, :def => file_exerb_def, :implib => file_exerb_lib
+  make_def_proxy file_exerb_rt_def, file_exerb_def, exerb_dll_base
+  objs_rt.push file_exerb_rt_def
 end
 
 make_resource file_resource_cui_o, file_resource_rc, "CUI"

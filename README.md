@@ -71,7 +71,9 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
 ## License
 
 Copyright (C) 2023 Z-H-Sun
+
 Copyright (C) 2014 windwiny
+
 Copyright (C) 2001-2006 加藤勇也
 
 This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or (at your option) any later version.
