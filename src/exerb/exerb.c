@@ -890,7 +890,7 @@ exerb_hook_get_proc_address(HMODULE module, LPCTSTR procname)
 
 	HMODULE kernel32 = GetModuleHandle("kernel32.dll");
 
-	// FIXME: �����ɂ��C���|�[�g�ɑΉ�����
+	// FIXME: 序数によるインポートに対応する
 
 	if ( module == kernel32 ) {
 		if      ( strcmp(procname, "LoadLibraryA")     == 0 ) return (FARPROC)exerb_hook_load_library;

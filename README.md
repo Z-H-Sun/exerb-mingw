@@ -38,12 +38,19 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
     gem install exerb --local --verbose && del *.gem
     ```
     * If you don't have `git`, it is also OK to [download the current snapshot here](https://github.com/Z-H-Sun/exerb-mingw/archive/refs/heads/master.zip) and extract from the archive instead
-    * If you just want to compile the C codes into binaries only without (re-)installing, instead of `gem install ...`, run `rake generate`. This is useful when you have already installed the gem (i.e., the Ruby scripts, `exerb` and `mkexy` and those in the `lib` folder, have been copied to the Ruby path), and you, as a developer, want to change the C codes and update the binaries `data/exerb/*.{exc,dll}`
+    * If you just want to compile the C codes into binaries only without (re-)installing, instead of `gem install ...`, go to the gem installation path and run `rake generate`. This is useful when you have already installed the gem (i.e., the Ruby scripts, `exerb` and `mkexy` and those in the `lib` folder, have been copied to the Ruby path), and you, as a developer, want to change the C codes and update the binaries `data/exerb/*.{exc,dll}`
 
 ## Updates and Known Bugs
 
 * Recover compatibility with Ruby 1.8
 * Solve the encoding issue for non-English locale
+  <details><summary>Caveats</summary>
+  
+  * In the generated `exy` file, if you find an `enc/*.so` file but without its corresponding `enc/trans/*.so`, please manually add the latter to the exy import file list; otherwise, it will not be able to be transcoded to other encodings. (I have taken care of all pairs with the same basenames (e.g., the Chinese ones), but some encoding libraries are not that straightforward (e.g., the Japanese ones).)
+  * The system locale encoding libraries, along with UTF-8 / UTF-16 / ASCII-8BIT, have been imported properly and will work fine. However, if you want to transcode from / into other encodings, please manually include the corresponding `enc/*.so` and `enc/trans/*.so` libraries into the exy import file list.
+  * Currently, the default 'external' encoding is set to be the same as 'locale' encoding, but it can be different from the script-defined encoding (defined on the first line or the line after shebang). The script-defined encoding will take effect when you create any new string object, but file reading/writing will still be in the 'locale' encoding. An easy workaround is to add an additional line at the beginning of your Ruby script: `Encoding.default_external = __ENCODING__`
+  </details>
+
 * Now compatible with 64-bit Ruby. However, the generated 64-bit executables cannot dynamically load libraries (e.g., `Win32API.new(...)`), which will cause Segmentation Fault. There are likely more differences between 32-bit and 64-bit images that need further attention.
 * The RT (run-time) cores won't work for Ruby >= 1.9; don't use them (This is because `Rakefile` fails to map correct exports of the exerb runtime DLL; in the future, `dumpbin` might be worth trying although it is proprietary?)
 * Not yet tested with Ruby >= 2.4. (RubyInstaller stopped providing the static library; I have not yet tried compiling it manually)
