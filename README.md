@@ -14,6 +14,20 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
 1. install RubyInstaller's DevKit
 
     * Refer to [RubyInstaller's wiki page](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit/25db58138bb49410ef9d7b695dbd1e8384b47871) on how to add the DevKit to your Ruby installation
+    <details><summary>TL;DR</summary>
+    
+    * Download the latest 32-bit (for 32-bit Ruby) or 64-bit (for 64-bit Ruby) [Devkit here](https://github.com/oneclick/rubyinstaller/releases/tag/devkit-4.7.2)
+      * Note: This is the 'legacy' MSYS devkit (not the MSYS2 one in the RubyInstaller2 repo)
+    * Extract and `cd` to that folder
+    * Run the following commands:
+        ```bat
+        devkitvars.bat	REM :Load mingw install path
+        ruby dk.rb init
+        notepad config.yml	REM :Review the config file and check if it has the correct ruby installed path; if not, edit it accordingly
+        ruby dk.rb install
+        ruby -e "require 'devkit'; puts ENV['RI_DEVKIT']"	REM :Test, ensure the path is %DEVKITPATH%  
+        ```
+    </details>
 
 2. install gem from local
 
@@ -24,11 +38,12 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
     gem install exerb --local --verbose && del *.gem
     ```
     * If you don't have `git`, it is also OK to [download the current snapshot here](https://github.com/Z-H-Sun/exerb-mingw/archive/refs/heads/master.zip) and extract from the archive instead
-    * If you just want to compile the codes into binaries only without installing (i.e., copying the relevant files to the Ruby path), instead of `gem install ...`, run `rake generate`
+    * If you just want to compile the C codes into binaries only without (re-)installing, instead of `gem install ...`, run `rake generate`. This is useful when you have already installed the gem (i.e., the Ruby scripts, `exerb` and `mkexy` and those in the `lib` folder, have been copied to the Ruby path), and you, as a developer, want to change the C codes and update the binaries `data/exerb/*.{exc,dll}`
 
 ## Updates and Known Bugs
 
 * Recover compatibility with Ruby 1.8
+* Solve the encoding issue for non-English locale
 * Now compatible with 64-bit Ruby. However, the generated 64-bit executables cannot dynamically load libraries (e.g., `Win32API.new(...)`), which will cause Segmentation Fault. There are likely more differences between 32-bit and 64-bit images that need further attention.
 * The RT (run-time) cores won't work for Ruby >= 1.9; don't use them (This is because `Rakefile` fails to map correct exports of the exerb runtime DLL; in the future, `dumpbin` might be worth trying although it is proprietary?)
 * Not yet tested with Ruby >= 2.4. (RubyInstaller stopped providing the static library; I have not yet tried compiling it manually)

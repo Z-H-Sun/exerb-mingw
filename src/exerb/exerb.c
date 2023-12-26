@@ -220,12 +220,39 @@ exerb_setup_kcode()
 	case ARCHIVE_HEADER_OPTIONS_KCODE_UTF8: rb_set_kcode("u"); break;
 	}
 #else
+	// deal with encoding libs
+	NAME_ENTRY_HEADER *name_entry = exerb_get_first_name_entry();
+	for (int i=0; i<g_name_table_header->number_of_headers; i++, name_entry++) {
+		const char *name = exerb_get_name_from_entry(name_entry); // get a list of imported files
+		const int namelen = strlen(name);
+		if (strnicmp(name, "enc", 3) == 0 && stricmp(name+namelen-3, ".so") == 0 && (name[3] == '\\' || name[3] == '/')) // only attend to those with a name like 'enc/**.so'
+			exerb_require(rb_str_new2(name)); // call `require` for those files
+	}
+// below (commented out) is the old treatment
+// now, there's no need to explicitly spell out the encoding libs like before (and this won't be a complete list! especially your locale is not English, e.g., gbk for Chinese systems)
+// for example, a warning message will show when you are in a CLI subsystem, stating that 'CP936' is undefined and ASCII-8BIT will be used, because it is defined as an alias for 'GBK' in `enc/gbk.so`
+
+// some other notes:
+// the treatment above takes care of ASCII-8BIT / Unicode (UTF-16) / UTF-8 / your system locale encoding, but if you want to transcode beyond these encodings, you need to add the following files as `extention-library` to the `file` section of .exy file, and the remainder will be taken care of by the new codes above:
+// `enc/<encoding>.so` and `enc/trans/<encoding>.so` (the latter is for converting from this encoding to other encodings)
+/*
 	exerb_require(rb_str_new2("enc/encdb"));
 	exerb_require(rb_str_new2("enc/utf_16le"));
 	exerb_require(rb_str_new2("enc/trans/transdb"));
 	exerb_require(rb_str_new2("enc/trans/utf_16_32"));
 	exerb_require(rb_str_new2("enc/trans/single_byte"));
+*/
 	Init_prelude();
+	Init_Locale_Encodings(); // define 'locale', 'extern', and 'filesystem' encodings
+// Otherwise:
+// * Encoding aliases 'locale', 'extern', and 'filesystem' will be unavailable
+// * Dir#... will give ASCII-8BIT strings, which will not work for File#exist?, etc., if there is any non-ascii char in the dir path
+
+// Additional note:
+// The default 'external' encoding is set to be the same as 'locale', but it can be different from the script-defined encoding (on the first line, or the second line after shebang)
+// The script-defined encoding will take effect when you create a new string object, but file read/write are still in the 'locale' encoding
+// An easy workaround is to add an additional line in your Ruby script:
+// `Encoding.default_external = __ENCODING__`
 #endif
 }
 
@@ -593,7 +620,8 @@ exerb_replace_import_dll(const char *base_of_file)
 	if ( !exerb_get_import_table_info(base_of_file, &info) ) return 0;
 
 	char self_filepath[MAX_PATH] = "";
-	const char *self_filename = exerb_get_self_filepath(self_filepath, sizeof(self_filepath));
+	exerb_get_module_filepath(NULL, self_filepath, sizeof(self_filepath));
+	const char *self_filename = exerb_get_filename(self_filepath);
 
 	exerb_replace_import_dll_name(&info, EXERB_LIBRUBY_SO, self_filename);
 
@@ -641,7 +669,8 @@ exerb_replace_import_dll_name(IMPORT_TABLE_INFO *info, const char *src_name, con
 				 file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_DYNAMIC_LIBRARY ) {
 				HMODULE module = exerb_preload_library(file_entry);
 				char filepath[MAX_PATH] = "";
-				const char *filename = exerb_get_module_filepath(module, filepath, sizeof(filepath));
+				exerb_get_module_filepath(module, filepath, sizeof(filepath));
+				const char *filename = exerb_get_filename(filepath);
 				exerb_replace_import_dll_name(info, name, filename);
 			}
 		}
@@ -861,7 +890,7 @@ exerb_hook_get_proc_address(HMODULE module, LPCTSTR procname)
 
 	HMODULE kernel32 = GetModuleHandle("kernel32.dll");
 
-	// FIXME: èòêîÇ…ÇÊÇÈÉCÉìÉ|Å[ÉgÇ…ëŒâûÇ∑ÇÈ
+	// FIXME: ÔøΩÔøΩÔøΩÔøΩÔøΩ…ÇÔøΩÔøΩCÔøΩÔøΩÔøΩ|ÔøΩ[ÔøΩgÔøΩ…ëŒâÔøΩÔøΩÔøΩÔøΩÔøΩ
 
 	if ( module == kernel32 ) {
 		if      ( strcmp(procname, "LoadLibraryA")     == 0 ) return (FARPROC)exerb_hook_load_library;

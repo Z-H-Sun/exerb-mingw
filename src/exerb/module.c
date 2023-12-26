@@ -25,7 +25,33 @@ static VALUE rb_exerbruntime_s_load_icon(VALUE self, VALUE id);
 static VALUE rb_exerbruntime_s_load_cursor(VALUE self, VALUE id);
 static LPCTSTR exerb_convert_resource_id(VALUE value);
 
+static VALUE rb_str_filesystem_encoding(const char*, long);
 ////////////////////////////////////////////////////////////////////////////////
+
+#ifdef RUBY19
+// need to export a path string in `filesystem` encoding
+	#include <ruby/encoding.h>
+	// For some early Ruby 1.9.0 (.1) versions, 'filesystem' encoding is not defined
+	#ifndef rb_filesystem_encoding
+		#define rb_filesystem_encoding rb_locale_encoding
+	// For some even earlier Ruby 1.9.0 (.0) versions, 'locale' encoding is also not defined
+	// Then there is nothing I can do about it... Just update to a higher version Ruby please
+	#endif
+
+	static VALUE rb_str_filesystem_encoding(const char *strinput, long len)
+	{
+		rb_encoding *enc_fs = rb_filesystem_encoding();
+		return rb_enc_str_new(strinput, len, enc_fs);
+	}
+
+	void Init_Locale_Encodings() // define 'locale', 'extern', and 'filesystem' encodings
+	{
+		VALUE encoding_loc = rb_enc_from_encoding(rb_locale_encoding()); // this will auto set 'locale' encoding; see `rb_locale_encoding` in `encoding.c`
+		rb_enc_set_default_external(encoding_loc); // in addition to 'external' encoding, this will also auto set 'filesystem' encoding (they can be different); see `encoding.c`
+	}
+#else // no need for Ruby < 1.8
+	#define rb_str_filesystem_encoding(chars, dummy) rb_str_new2(chars)
+#endif
 
 void
 Init_ExerbRuntime()
@@ -49,16 +75,17 @@ static VALUE
 rb_exerbruntime_s_filepath(VALUE self)
 {
 	char filepath[MAX_PATH] = "";
-	exerb_get_self_filepath(filepath, sizeof(filepath));
-	return rb_str_new2(filepath);
+	const DWORD len = exerb_get_module_filepath(NULL, filepath, sizeof(filepath));
+	return rb_str_filesystem_encoding(filepath, len);
 }
 
 static VALUE
 rb_exerbruntime_s_filename(VALUE self)
 {
 	char filepath[MAX_PATH] = "";
-	const char *filename = exerb_get_self_filepath(filepath, sizeof(filepath));
-	return rb_str_new2(filename);
+	exerb_get_module_filepath(NULL, filepath, sizeof(filepath));
+	const char *filename = exerb_get_filename(filepath);
+	return rb_str_filesystem_encoding(filename, strlen(filename));
 }
 
 static VALUE

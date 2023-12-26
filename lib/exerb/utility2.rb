@@ -14,11 +14,20 @@ module Exerb::Utility2
     reject_list << File.expand_path(__FILE__)
 
     __LOADED_FEATURES = $LOADED_FEATURES.clone  # Don't change $LOADED_FEATURES
-    if RUBY_VERSION >= "1.9.3"
-      ['enc/encdb.so', 'enc/utf_16le.so',
+    if RUBY_VERSION >= "1.9.0"
+      REQUIRED_LIBS = ['enc/encdb.so', 'enc/utf_16le.so',
         'enc/trans/transdb.so', 'enc/trans/utf_16_32.so',
-        'enc/trans/single_byte.so'].each do |enc|
+        'enc/trans/single_byte.so']
+      
+      __LOADED_FEATURES.each do |ldf|
+        next if REQUIRED_LIBS.index { |f| ldf.include?(f) } # already in the loaded feature list
+        if File.basename(File.dirname(ldf)).downcase == 'enc' and File.extname(ldf).downcase == '.so' # */enc/*.so
+          dir_base = File.split(ldf)
+          REQUIRED_LIBS.push('enc/trans/'+dir_base[1]) if File.file?(dir_base[0]+'/trans/'+dir_base[1]) # sometimes, */enc/trans/*.so is sometimes not in the list; need to add it manually if it exists
+        end
+      end
 
+      REQUIRED_LIBS.each do |enc|
         unless __LOADED_FEATURES.find { |f| f.include?(enc) }
           __LOADED_FEATURES << enc
         end
@@ -71,6 +80,9 @@ module Exerb::Utility2
   # Code copied and adapted from Ocra project
   # http://ocra.rubyforge.org/
   def self.loaded_libraries
+# Win32API is deprecated after Ruby 1.9.1; also,
+# Ruby > 3.0.2 has entirely dropped support for the Win32API library, although you can still try `gem install win32api` as a temporary workaround
+# An alternative way, e.g., Fiddle, may be implemented instead in the future
     require "Win32API"
 
     enumprocessmodules = Win32API.new('psapi',    'EnumProcessModules', ['L','P','L','P'], 'L')

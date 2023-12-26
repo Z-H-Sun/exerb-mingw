@@ -14,8 +14,7 @@ DWORD exerb_fread(const HANDLE file, void *buffer, const int size);
 /* char* exerb_fread(const HANDLE file); */
 DWORD exerb_fwrite(const HANDLE file, const void *buffer, const int size);
 DWORD exerb_fsize(const HANDLE file);
-const char* exerb_get_module_filepath(const HMODULE handle, char *filepath, const int size);
-const char* exerb_get_self_filepath(char *filepath, const int size);
+DWORD exerb_get_module_filepath(const HMODULE handle, char *filepath, const int size);
 const char* exerb_get_filename(const char *filepath);
 int exerb_cmp_filename_with_ext(const char *name1, const char *name2, const char *ext);
 void exerb_create_tmpfile(const char *prefix, char *filepath, const void *buffer, const int size);

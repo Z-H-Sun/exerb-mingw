@@ -102,19 +102,13 @@ exerb_fsize(const HANDLE file)
 	return size;
 }
 
-const char*
+DWORD
 exerb_get_module_filepath(const HMODULE handle, char *filepath, int size)
 {
 	const DWORD ret = GetModuleFileName(handle, filepath, size);
 	if ( !ret ) exerb_raise_runtime_error(GetLastError());
 
-	return exerb_get_filename(filepath);
-}
-
-const char*
-exerb_get_self_filepath(char *filepath, const int size)
-{
-	return exerb_get_module_filepath(NULL, filepath, size);
+	return ret; // length not including the trailing \0
 }
 
 const char*
