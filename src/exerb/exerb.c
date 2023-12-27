@@ -46,8 +46,8 @@ NAME_TABLE_HEADER *g_name_table_header = NULL;
 FILE_TABLE_HEADER *g_file_table_header = NULL;
 
 int g_loaded_library_count = 0;
-LOADED_LIBRARY_ENTRY g_loaded_library_table[32] = {0};
-LOADED_LIBRARY_ENTRY g_pre_loaded_library_table[8] = {0};
+LOADED_LIBRARY_ENTRY g_loaded_library_table[32] = {{0}};
+LOADED_LIBRARY_ENTRY g_pre_loaded_library_table[8] = {{0}};
 
 int g_loaded_resource_count = 0;
 HMODULE g_loaded_resource_table[4] = {0};
@@ -480,10 +480,10 @@ exerb_find_file_outside(const VALUE filename, VALUE *feature, VALUE *realname)
 	const VALUE filename_so  = rb_str_concat(rb_str_dup(filename), rb_str_new2(".so"));
 	const VALUE filename_dll = rb_str_concat(rb_str_dup(filename), rb_str_new2(".dll"));
 
-	if ( *realname = rb_find_file(*feature = filename)    ) return 1;
-	if ( *realname = rb_find_file(*feature = filename_rb) ) return 1;
-	if ( *realname = rb_find_file(*feature = filename_so) ) return 1;
-	if ( *realname = rb_find_file(filename_dll) ) { *feature = filename_so; return 1; }
+	if (( *realname = rb_find_file(*feature = filename)    )) return 1;
+	if (( *realname = rb_find_file(*feature = filename_rb) )) return 1;
+	if (( *realname = rb_find_file(*feature = filename_so) )) return 1;
+	if (( *realname = rb_find_file(filename_dll) )) { *feature = filename_so; return 1; }
 
 	*feature  = Qnil;
 	*realname = Qnil;
@@ -664,7 +664,7 @@ exerb_replace_import_dll_name(IMPORT_TABLE_INFO *info, const char *src_name, con
 			} else {
 				rb_raise(rb_eLoadError, "Couldn't modify DLL's name in the import table. The name of the executable file is too long.");
 			}
-		} else if ( file_entry = exerb_find_file_entry_by_filename(name, NULL) ) {
+		} else if (( file_entry = exerb_find_file_entry_by_filename(name, NULL) )) {
 			if ( file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY ||
 				 file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_DYNAMIC_LIBRARY ) {
 				HMODULE module = exerb_preload_library(file_entry);
@@ -837,7 +837,7 @@ exerb_hook_load_library(LPCTSTR filename)
 		if ( stricmp(filename, EXERB_LIBRUBY_NAME) == 0 ||
 			 stricmp(filename, EXERB_LIBRUBY_SO) == 0 ) {
 			return GetModuleHandle(NULL);
-		} else if ( file_entry = exerb_find_file_entry_by_filename(filename, "dll") ) {
+		} else if (( file_entry = exerb_find_file_entry_by_filename(filename, "dll") )) {
 			if ( file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY ||
 				 file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_DYNAMIC_LIBRARY ) {
 				return exerb_preload_library(file_entry);
@@ -859,7 +859,7 @@ exerb_hook_load_library_ex(LPCTSTR filename, HANDLE file, DWORD flags)
 		if ( stricmp(filename, EXERB_LIBRUBY_NAME) == 0 ||
 			 stricmp(filename, EXERB_LIBRUBY_SO) == 0 ) {
 			return GetModuleHandle(NULL);
-		} else if (file_entry = exerb_find_file_entry_by_filename(filename, "dll") ) {
+		} else if ((file_entry = exerb_find_file_entry_by_filename(filename, "dll") )) {
 			if ( file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_EXTENSION_LIBRARY ||
 				 file_entry->type_of_file == FILE_ENTRY_HEADER_TYPE_DYNAMIC_LIBRARY ) {
 				return exerb_preload_library(file_entry);

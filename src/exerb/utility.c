@@ -115,8 +115,8 @@ const char*
 exerb_get_filename(const char *filepath)
 {
 	char *filename = NULL;
-	if ( filename = strrchr(filepath, '\\') ) return filename + 1;
-	if ( filename = strrchr(filepath, '/')  ) return filename + 1;
+	if (( filename = strrchr(filepath, '\\') )) return filename + 1;
+	if (( filename = strrchr(filepath, '/')  )) return filename + 1;
 
 	return filepath;
 }

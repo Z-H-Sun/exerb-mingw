@@ -1,44 +1,20 @@
+# change the default general compilation options below
+# alternatively, pass these flags by `set EXERB_GENERAL_CFLAGS=...`
+EXERB_GENERAL_CFLAGS = ENV['EXERB_GENERAL_CFLAGS'] || '-std=gnu99 -O3 -g -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings'
+
 begin
   require 'devkit'
   raise LoadError unless ENV['RI_DEVKIT'] # need RubyInstaller's DevKit, not devkit gem.
 rescue LoadError
   msg = "You need to install the devkit to compile exerb-mingw.\n"
-  msg << "  http://rubyinstaller.org/add-ons/devkit/"
+  msg << "https://github.com/oneclick/rubyinstaller/releases/tag/devkit-4.7.2"
   abort msg
 end
 require 'rbconfig'
 require 'ostruct'
 require 'rake/clean'
 
-raise('Unknown Ruby version: '+RUBY_VERSION) unless RUBY_VERSION =~ /(\d+)\.(\d+)/
-HIGH_VER_RUBY = (($1.to_i) > 1 or ($2.to_i) > 8) # Ruby >= 1.9
-if HIGH_VER_RUBY
-  # Include vendored scripts
-  $LOAD_PATH.unshift File.expand_path("../vendor", __FILE__)
-  require "mkexports"
-  EXERB_CFLAGS = "-DRUBY19 -DRUBY19_COMPILED_CODE"
-else
-  EXERB_CFLAGS = '' # add flags only for Ruby >= 1.9
-end
-
 C = OpenStruct.new
-c = RbConfig::CONFIG
-c['CFLAGS'] = ' -Wall -std=gnu99 -O3 -g -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Werror=pointer-arith -Werror=write-strings '
-C.arch = c["arch"]
-C.cc = "#{c['CC'] || 'gcc'}"
-C.cflags = "#{c['CFLAGS'] || '-Os'}"
-C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
-C.exerb_cflags = EXERB_CFLAGS
-C.cppflags = c['CPPFLAGS']
-if c['rubyhdrdir']
-  C.incflags = "-I#{c['rubyhdrdir']}/#{c['arch']} -I#{c['rubyhdrdir']}" if c['rubyhdrdir']
-else
-  C.incflags = "-I#{c['archdir']}"
-end
-C.ldflags = "-L#{c['libdir']}"
-C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack=0x02000000,--wrap=rb_require_safe,--wrap=rb_require'}"
-C.rubylib = "#{c['LIBRUBYARG_STATIC']}"
-C.libs = "#{c['LIBS']}"
 C.ver = RUBY_VERSION.gsub('.','')
 
 def make_resource(target, source, type)
@@ -129,7 +105,6 @@ def make_config(target, libruby_name, libruby_so)
       EOH
     end
   end
-  CLEAN.include target
 end
 
 # Ruby 1.9.1 doesn't have SyncEnumerator
@@ -163,6 +138,37 @@ file_ruby_cui_rt      = "data/exerb/ruby#{C.ver}crt.exc"
 file_ruby_gui         = "data/exerb/ruby#{C.ver}g.exc"
 file_ruby_gui_rt      = "data/exerb/ruby#{C.ver}grt.exc"
 
+task :config do
+
+raise('Unknown Ruby version: '+RUBY_VERSION) unless RUBY_VERSION =~ /(\d+)\.(\d+)/
+HIGH_VER_RUBY = (($1.to_i) > 1 or ($2.to_i) > 8) # Ruby >= 1.9
+if HIGH_VER_RUBY
+  # Include vendored scripts
+  $LOAD_PATH.unshift File.expand_path("../vendor", __FILE__)
+  require "mkexports"
+  EXERB_CFLAGS = "-DRUBY19 -DRUBY19_COMPILED_CODE"
+else
+  EXERB_CFLAGS = '' # add flags only for Ruby >= 1.9
+end
+
+c = RbConfig::CONFIG
+c['CFLAGS'] = EXERB_GENERAL_CFLAGS
+C.arch = c["arch"]
+C.cc = "#{c['CC'] || 'gcc'}"
+C.cflags = "#{c['CFLAGS'] || '-Os'}"
+C.xcflags = "#{c['XCFLAGS'] || '-DRUBY_EXPORT'}"
+C.exerb_cflags = EXERB_CFLAGS
+C.cppflags = c['CPPFLAGS']
+if c['rubyhdrdir']
+  C.incflags = "-I#{c['rubyhdrdir']}/#{c['arch']} -I#{c['rubyhdrdir']}" if c['rubyhdrdir']
+else
+  C.incflags = "-I#{c['archdir']}"
+end
+C.ldflags = "-L#{c['libdir']}"
+C.xldflags = "#{c['XLDFLAGS'] || '-Wl,--stack=0x02000000,--wrap=rb_require_safe,--wrap=rb_require'}"
+C.rubylib = "#{c['LIBRUBYARG_STATIC']}"
+C.libs = "#{c['LIBS']}"
+
 lib_sources = Dir["src/exerb/{exerb,module,utility,patch}.c"]
 dll_sources = [file_resource_dll_o]
 cui_sources = ["src/exerb/cui.c", file_resource_cui_o]
@@ -191,24 +197,43 @@ make_resource file_resource_gui_o, file_resource_rc, "GUI"
 link_cpp file_ruby_gui, :sources => (gui_sources + objs), :gui => true, :dependencies => exerb_config_header
 link_cpp file_ruby_gui_rt, :sources => (gui_sources + objs_rt), :rubylib => "", :gui => true, :dependencies => exerb_config_header
 
-task :rm_tmp do
-  FileUtils.rm_rf('tmp') if File.directory?('tmp')
 end
 
-desc "generate cui and gui exa data"
-task :generate => [
+task :rm_tmp do
+  puts "removing folder tmp"
+  FileUtils.rm_rf('tmp') if File.directory?('tmp')
+end
+task :rm_bin do
+  puts "removing folder data"
+  FileUtils.rm_rf('data') if File.directory?('data')
+end
+task :compile => [
   file_ruby_cui,
   file_ruby_cui_rt,
   file_ruby_gui,
-  file_ruby_gui_rt,
+  file_ruby_gui_rt]
+
+desc "generate cui and gui exc data"
+task :generate => [
+  :generate_no_clean,
   :rm_tmp
+]
+
+desc "same as above but w/o cleaning up temp output files"
+task :generate_no_clean => [
+  :rm_bin,
+  :config,
+  :compile
 ]
 
 desc "show infomation"
 task :default do
-  puts "Please use 'gem' to build and install gem."
-  puts "  This Rakefile used by generate data."
+  puts "\nThis Rakefile is used to generate ONLY the binary files in the 'data' folder."
+  puts "If you are sure this is what your want, please run `rake generate`. Otherwise:"
+  puts "\nPlease use 'gem' to build and install this gem. Run the following command:"
+  puts "`gem build exerb.gemspec && gem install exerb --local --verbose && del *.gem`"
 end
 
+CLEAN.include(exerb_config_header)
 CLEAN.include('tmp')
 CLOBBER.include('data')

@@ -25,7 +25,6 @@ static VALUE rb_exerbruntime_s_load_icon(VALUE self, VALUE id);
 static VALUE rb_exerbruntime_s_load_cursor(VALUE self, VALUE id);
 static LPCTSTR exerb_convert_resource_id(VALUE value);
 
-static VALUE rb_str_filesystem_encoding(const char*, long);
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef RUBY19
@@ -38,6 +37,7 @@ static VALUE rb_str_filesystem_encoding(const char*, long);
 	// Then there is nothing I can do about it... Just update to a higher version Ruby please
 	#endif
 
+	static VALUE rb_str_filesystem_encoding(const char*, long);
 	static VALUE rb_str_filesystem_encoding(const char *strinput, long len)
 	{
 		rb_encoding *enc_fs = rb_filesystem_encoding();
@@ -50,7 +50,9 @@ static VALUE rb_str_filesystem_encoding(const char*, long);
 		rb_enc_set_default_external(encoding_loc); // in addition to 'external' encoding, this will also auto set 'filesystem' encoding (they can be different); see `encoding.c`
 	}
 #else // no need for Ruby < 1.8
-	#define rb_str_filesystem_encoding(chars, dummy) rb_str_new2(chars)
+	#define rb_str_filesystem_encoding(chars, dummy) rb_str_new2(chars); \
+					(void) dummy // this line avoids the 'unused variable' warning
+// Ruby 1.8 does not process encoding for strings
 #endif
 
 void
