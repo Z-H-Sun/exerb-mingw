@@ -35,14 +35,23 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
     git clone https://github.com/Z-H-Sun/exerb-mingw.git
     cd exerb-mingw
     gem build exerb.gemspec
-    gem install exerb --local --verbose && del *.gem
+    gem install exerb --local --verbose
     ```
+    * You can pass environment variables to configure the name of C compiler and compilation flags:
+      <details><summary>Ex:</summary>
+
+      * `set EXERB_C_COMPILER=i686-w64-mingw32-gcc.exe`
+      * `set EXERB_GENERAL_CFLAGS=-std=gnu99 -Os -w`
+      * then after everything has been completed, `set <every_env_var>=` to unset their values
+      </details>
+
     * If you don't have `git`, it is also OK to [download the current snapshot here](https://github.com/Z-H-Sun/exerb-mingw/archive/refs/heads/master.zip) and extract from the archive instead
     * If you just want to compile the C codes into binaries only without (re-)installing, instead of `gem install ...`, go to the gem installation path and run `rake generate`. This is useful when you have already installed the gem (i.e., the Ruby scripts, `exerb` and `mkexy` and those in the `lib` folder, have been copied to the Ruby path), and you, as a developer, want to change the C codes and update the binaries `data/exerb/*.{exc,dll}`
 
 ## Updates and Known Bugs
 
 * Recover compatibility with Ruby 1.8
+* Allow configuring the compilation using environment variables
 * Solve the encoding issue for non-English locale
   <details><summary>Caveats</summary>
   
