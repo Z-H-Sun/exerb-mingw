@@ -181,10 +181,15 @@ exerb_get_file_from_entry2(const FILE_ENTRY_HEADER *file_entry)
 	if (file_entry->zipd)
 	{
 		VALUE code2;
+#ifdef HAVE_STATIC_ZLIB
+		VALUE ruby_zlib_inflate(VALUE); // vendor/zlib.c
+		code2 = ruby_zlib_inflate(code);
+#else
 		VALUE zlib;
 		rb_require("zlib");
 		zlib = rb_const_get(rb_cObject, rb_intern("Zlib"));
 		code2 = rb_funcall(rb_const_get(zlib, rb_intern("Inflate")), rb_intern("inflate"), 1, code);
+#endif
 		return code2;
 	} else {
 		return code;

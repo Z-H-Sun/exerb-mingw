@@ -153,6 +153,10 @@ static VALUE
 exerb_main_in_protect(VALUE on_init_proc)
 {
 	Init_ExerbRuntime();
+#ifdef HAVE_STATIC_ZLIB
+	void Init_zlib(void); // vendor/zlib.c
+	Init_zlib();
+#endif
 
 	void (*on_init)(VALUE, VALUE, VALUE) = (void(*)(VALUE, VALUE, VALUE))NUM2UINT(on_init_proc);
 	if ( on_init ) on_init(rb_stdin, rb_stdout, rb_stderr);

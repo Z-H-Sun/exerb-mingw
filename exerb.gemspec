@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
 
   spec.files         = (Dir['**/*'] - # rules adapted from .gitignore
                         Dir['{tmp,data}/**/*'] -
-                        Dir['*.gem'] -
+                        Dir['*.{gem,log}'] -
                         Dir['src/exerb/config.h']).reject { |file| # do not include folder names
                           File.directory?(file)
                         }

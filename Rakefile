@@ -170,6 +170,32 @@ task :config do
   cui_sources = ["src/exerb/cui.c", file_resource_cui_o]
   gui_sources = ["src/exerb/gui.c", file_resource_gui_o]
 
+  module StaticZlibTest # this namespace definition is important for low Ruby versions < 2.0!
+# Otherwise, `mkmf`'s `rm_f` (imported from `fileutils`) will have conflict with `Rake::FileUtils` or `Rake::FileUtilsExe`'s `rm_f`
+# Though this bug has been fixed in higher Ruby versions (by introducing a `MakeMakefile` module and operate explicitly under that namespace)
+    if ENV['EXERB_NO_STATIC_ZLIB'] # this whole thing can be skipped by `set EXERB_NO_STATIC_ZLIB=1`
+      puts "\nYou have chosen not to link static Zlib library for code compressing."
+    else # check if there is static zlib in mingw
+# dynamic ones should theoretically work, but you need to provide the dll alongside with your binary distribution, which is undesired
+# thus the name `zdll` is not checked below as the name indicates dynamic lib
+      require "mkmf" # will generate 'mkmf.log' when testing; should add it to .gitignore
+      $extmk = true # test using static ruby lib: in `link_command` in 'mkmf.rb': `librubyarg = $extmk ? $LIBRUBYARG_STATIC : $LIBRUBYARG`
+      puts "\nChecking if there is a static Zlib library..."
+      C.zlib_libname = %w'z libz zlib1 zlib'.find {|z| have_library(z+' -static', 'deflateReset')} if have_header('zlib.h') # test using `-static` option (alternatively, set `c['LIBARG'] = '-static -l%s'`)
+    end
+  end
+  if C.zlib_libname
+    C.exerb_cflags += ' -DHAVE_STATIC_ZLIB'
+    C.rubylib += ' -Wl,-Bstatic -l' + C.zlib_libname
+    lib_sources.push 'vendor/zlib.c'
+  else
+    puts 'No static Zlib library will be linked. But don`t worry!'
+    print "The code compressing function is still available, and it will be achieved by dynamic loading.\n\n"
+  end
+  # TODO: should not export symbols for zlib (in `-Wl,--export-all`; this will not be a problem for HIGH_VER_RUBY as a different method will be used to generate def file)
+  # TODO: the current zlib.c (Ruby wrapper) only works for Ruby 1.8; should update to higher version?
+  # TODO: should not include zlib.so in the exy file list for this static zlib version, so should make something like a config file? (see 'lib/exerb/utility2.rb')
+
   make_resource file_resource_dll_o, file_resource_rc, "RUNTIME"
 
   make_config exerb_config_header, c["RUBY_SO_NAME"], c["LIBRUBY_SO"]
