@@ -41,7 +41,7 @@ OptionParser.new do |opts|
 end.parse!
 
 
-exec(Gem.ruby, *(["-I#{path1}", "-rexerb/mkexy"] + ARGV))
+system(Gem.ruby, *(["-I#{path1}", "-rexerb/mkexy"] + ARGV)) # For Ruby 2.2, `exec` has a bug dealing with the encoding of ARGV; changed to `system`
 
 #==============================================================================#
 #==============================================================================#

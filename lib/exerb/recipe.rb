@@ -8,6 +8,7 @@ require 'yaml'
 require 'exerb/error'
 require 'exerb/utility'
 require 'exerb/archive'
+HAVE_ENCODING = String.method_defined?(:encoding)
 
 #==============================================================================#
 
@@ -33,7 +34,7 @@ class Exerb::Recipe
     filename = File.basename(filepath)
 
     begin
-      blocks = YAML.load(File.read(filepath))
+      blocks = YAML.load(File.open(filepath, HAVE_ENCODING ? 'r:utf-8' : 'r')) # YAML needs to process in UTF-8 encoding
     rescue Errno::ENOENT => e
       raise(Exerb::ExerbError, "no such file -- #{filepath}")
     rescue ArgumentError => e

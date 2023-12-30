@@ -19,6 +19,8 @@ class Exerb::NameTable
   end
 
   def add(name)
+    name = name.dup.force_encoding('binary') if HAVE_ENCODING # string needs to be binary
+
     @entries.find { |entry|
       if entry.name == name
         return entry.id

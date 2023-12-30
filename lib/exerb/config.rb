@@ -22,19 +22,21 @@ module Exerb
   # Name definitions of a core.
   CORE_NAME = {
     'cui'    => "ruby#{ver}c.exc",
-    'cuid'   => "ruby#{ver}cd.exc",
+#   'cuid'   => "ruby#{ver}cd.exc",
     'cuirt'  => "ruby#{ver}crt.exc",
-    'cuirtd' => "ruby#{ver}crtd.exc",
+#   'cuirtd' => "ruby#{ver}crtd.exc",
     'gui'    => "ruby#{ver}g.exc",
-    'guid'   => "ruby#{ver}gd.exc",
+#   'guid'   => "ruby#{ver}gd.exc",
     'guirt'  => "ruby#{ver}grt.exc",
-    'guirtd' => "ruby#{ver}grtd.exc",
+#   'guirtd' => "ruby#{ver}grtd.exc",
   }
 
   # Descriptions of a core.
   CORE_DESC = {
-    # FIXME: Add descriptions
-    # "ruby#{ver}c.exc" => '...',
+    'ruby#{ver}c.exc'   => 'ruby #{RUBY_VERSION} / CUI / stand-alone',
+    'ruby#{ver}g.exc'   => 'ruby #{RUBY_VERSION} / GUI / stand-alone',
+    'ruby#{ver}crt.exc' => 'ruby #{RUBY_VERSION} / CUI / using runtime-library',
+    'ruby#{ver}grt.exc' => 'ruby #{RUBY_VERSION} / GUI / using runtime-library',
   }
 
 end # Exerb
