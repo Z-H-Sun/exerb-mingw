@@ -1,7 +1,6 @@
 // $Id: gui.cpp,v 1.15 2008/12/19 12:17:50 arton Exp $
 
 #include <ruby.h>
-#include <windowsx.h>
 #include "exerb.h"
 #include "resource.h"
 
@@ -18,6 +17,14 @@ static VALUE rb_exerbio_write(VALUE self, VALUE str);
 static VALUE rb_exerbio_return_nil(int argc, VALUE *argv, VALUE self);
 
 static LRESULT CALLBACK dialog_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+
+static void checkFonts();
+static int font_size = 0;
+static BOOL have_font_consolas = FALSE, have_font_segoe_ui = FALSE;
+static HFONT font = NULL, font_dlg = NULL;
+static HICON icon = NULL;
+const char * const ConsolasFontName = "Consolas";
+const char * const SegoeUIFontName = "Segoe UI";
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -46,7 +53,7 @@ on_init(VALUE io_stdin, VALUE io_stdout, VALUE io_stderr)
 static void
 on_fail(VALUE errinfo)
 {
-	DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_EXCEPTION), NULL, (DLGPROC)dialog_proc, (LPARAM)errinfo);
+	DialogBoxParam(NULL, MAKEINTRESOURCE(IDD_EXCEPTION), NULL, (DLGPROC)dialog_proc, (LPARAM)errinfo);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +124,6 @@ rb_exerbio_return_nil(int argc, VALUE *argv, VALUE self)
 static LRESULT CALLBACK
 dialog_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	static HFONT font = NULL;
 
 	switch ( message ) {
 		case WM_INITDIALOG:
@@ -148,16 +154,31 @@ dialog_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 				SetWindowText(hwnd, window_title);
 			}
 
-			font = CreateFont(14, 0, 0, 0, FW_REGULAR, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FIXED_PITCH | FF_MODERN, "Terminal");
-			SetWindowFont(GetDlgItem(hwnd, IDC_EDIT_TYPE),      font, FALSE);
-			SetWindowFont(GetDlgItem(hwnd, IDC_EDIT_MESSAGE),   font, FALSE);
-			SetWindowFont(GetDlgItem(hwnd, IDC_EDIT_BACKTRACE), font, FALSE);
+			icon = LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_RUBY), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE | LR_SHARED);
+			SendMessage(hwnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)icon);
+
+			checkFonts();
+			font = CreateFont(font_size, 0, 0, 0, FW_REGULAR, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FIXED_PITCH | FF_MODERN, have_font_consolas ?  ConsolasFontName : "Courier New");
+			SendDlgItemMessage(hwnd, IDC_EDIT_TYPE,      WM_SETFONT, (WPARAM)font, (LPARAM)FALSE);
+			SendDlgItemMessage(hwnd, IDC_EDIT_MESSAGE,   WM_SETFONT, (WPARAM)font, (LPARAM)FALSE);
+			SendDlgItemMessage(hwnd, IDC_EDIT_BACKTRACE, WM_SETFONT, (WPARAM)font, (LPARAM)FALSE);
+			if (have_font_segoe_ui) {
+				font_dlg = CreateFont(font_size, 0, 0, 0, FW_REGULAR, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, FF_DONTCARE, SegoeUIFontName);
+				SendDlgItemMessage(hwnd, ID_CLOSE,             WM_SETFONT, (WPARAM)font_dlg, (LPARAM)FALSE);
+				SendDlgItemMessage(hwnd, IDC_STATIC_TITLE,     WM_SETFONT, (WPARAM)font_dlg, (LPARAM)FALSE);
+				SendDlgItemMessage(hwnd, IDC_STATIC_TYPE,      WM_SETFONT, (WPARAM)font_dlg, (LPARAM)FALSE);
+				SendDlgItemMessage(hwnd, IDC_STATIC_MESSAGE,   WM_SETFONT, (WPARAM)font_dlg, (LPARAM)FALSE);
+				SendDlgItemMessage(hwnd, IDC_STATIC_BACKTRACE, WM_SETFONT, (WPARAM)font_dlg, (LPARAM)FALSE);
+			}
 
 			MessageBeep(MB_ICONHAND);
 			
 			return TRUE;
 		case WM_DESTROY:
+			DeleteObject(icon);
 			DeleteObject(font);
+			if (font_dlg)
+				DeleteObject(font_dlg);
 			return TRUE;
 		case WM_CLOSE:
 			EndDialog(hwnd, ID_CLOSE);
@@ -174,3 +195,30 @@ dialog_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+static int CALLBACK EnumFontFamExProc(
+	ENUMLOGFONTEXA *lpelfe,
+	NEWTEXTMETRICEXA *lpntme,
+	DWORD FontType,
+	LPARAM lParam
+)
+{
+	if (strnicmp((char *) lpelfe->elfFullName, ConsolasFontName, strlen(ConsolasFontName)+1) == 0)
+		have_font_consolas=TRUE;
+	if (strnicmp((char *) lpelfe->elfFullName, SegoeUIFontName, strlen(SegoeUIFontName)+1) == 0)
+		have_font_segoe_ui=TRUE;
+
+	if (have_font_consolas && have_font_segoe_ui)
+		return 0;
+
+	return 1;
+}
+
+static void checkFonts()
+{
+	LOGFONTA lf = {0};
+	HDC hDC = GetDC(NULL);
+	EnumFontFamiliesExA(hDC, &lf, (FONTENUMPROCA)EnumFontFamExProc, 0, 0);
+	font_size = -MulDiv(DLG_FONT_SIZE, GetDeviceCaps(hDC, LOGPIXELSY), 72); // need to accurately calculate font size according to screen DPI; see the comments for the `lfHeight` param on MSDN: https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-logfonta#members
+	ReleaseDC(NULL, hDC);
+}
