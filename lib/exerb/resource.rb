@@ -28,7 +28,7 @@ class Exerb::Resource
   include Enumerable
 
   DEFAULT_LANG_ID = 0x0400 # Neutral
-  RT_EXERB = 100
+  RT_EXERB = Exerb::Win32::Const::RT_RCDATA
   ID_EXERB = 1
 
   def initialize
