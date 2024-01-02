@@ -42,6 +42,7 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
 
       * `set EXERB_C_COMPILER=i686-w64-mingw32-gcc.exe`
       * `set EXERB_GENERAL_CFLAGS=-std=gnu99 -Os -w`
+      * `set EXERB_EXCLUDE_MANIFEST=1` (otherwise, a manifest with XP style, UAC, and DPI configurations will be attatched)
       * then after everything has been completed, `set <every_env_var>=` to unset their values
       </details>
 
@@ -52,6 +53,7 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
 
 * Recover compatibility with Ruby 1.8
 * Allow configuring the compilation using environment variables
+* Improve GUI for the error dialog
 * Solve the encoding issue for non-English locale
   <details><summary>Caveats</summary>
   

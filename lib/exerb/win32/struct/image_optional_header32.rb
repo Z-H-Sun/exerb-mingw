@@ -19,10 +19,21 @@ end # Exerb
 class Exerb::Win32::Struct::ImageOptionalHeader32 < Exerb::Win32::Struct::Base
 
   FORMAT = 'SCCLLLLLLLLLSSSSSSLLLLSSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL'
+
+def read(io)
   # Compatibility with 64-bit PE. See https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#optional-header-windows-specific-fields-image-only
-  if [nil].pack('p').size == 8 # 32-bit will give 4
+  @magic = io.read(2).unpack('S')[0]
+  io.seek(-2, 1)
+  if @magic == 0x10b
+    FORMAT[56, 4]='LLLL' # 32-bit
+  elsif @magic == 0x20b
     FORMAT[56, 4]='QQQQ' # ideally they should be 'J' (pointer-width), which is 32-bit on 32-bit and 64-bit on 64-bit, but this feature is not available till Ruby 2.3
+  else
+    raise('Unknown PE magic number 0x%04x, neither PE32 (0x10b) nor PE32+ (64-bit, 0x20b) format' % @magic)
   end
+
+  super
+end
 
   def initialize
     @magic                            = 0

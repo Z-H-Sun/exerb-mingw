@@ -23,6 +23,7 @@ C.ver = RUBY_VERSION.gsub('.','')
 def make_resource(target, source, type)
   file target => source do
     mkdir_p File.dirname(target)
+    type += ' -DEXCLUDE_MANIFEST' if ENV['EXERB_EXCLUDE_MANIFEST'] # will not add exe manifest if `set EXERB_NO_STATIC_ZLIB=1`
     sh "windres -D#{type} #{source} #{target}"
   end
 end
