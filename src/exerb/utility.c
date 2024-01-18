@@ -153,25 +153,25 @@ exerb_raise_runtime_error(const DWORD error_no)
 NAME_ENTRY_HEADER*
 exerb_get_first_name_entry()
 {
-	return (NAME_ENTRY_HEADER*)((DWORD)g_name_table_header + g_name_table_header->offset_of_headers);
+	return (NAME_ENTRY_HEADER*)((uintptr_t)g_name_table_header + g_name_table_header->offset_of_headers);
 }
 
 FILE_ENTRY_HEADER*
 exerb_get_first_file_entry()
 {
-	return (FILE_ENTRY_HEADER*)((DWORD)g_file_table_header + g_file_table_header->offset_of_headers);
+	return (FILE_ENTRY_HEADER*)((uintptr_t)g_file_table_header + g_file_table_header->offset_of_headers);
 }
 
 char*
 exerb_get_name_from_entry(const NAME_ENTRY_HEADER *name_entry)
 {
-	return (char*)((DWORD)g_name_table_header + g_name_table_header->offset_of_pool + name_entry->offset_of_name);
+	return (char*)((uintptr_t)g_name_table_header + g_name_table_header->offset_of_pool + name_entry->offset_of_name);
 }
 
 char*
 exerb_get_file_from_entry1(const FILE_ENTRY_HEADER *file_entry)
 {
-	return (char*)((DWORD)g_file_table_header + g_file_table_header->offset_of_pool + file_entry->offset_of_file);
+	return (char*)((uintptr_t)g_file_table_header + g_file_table_header->offset_of_pool + file_entry->offset_of_file);
 }
 
 VALUE

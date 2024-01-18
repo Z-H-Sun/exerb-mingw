@@ -7,15 +7,16 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
 0. Check your Ruby installation
     * Make sure you have `rake`; otherwise, run `gem install rake`
       * For Ruby < 1.9, you need a lower version rake that is compatible by specifying `-v 10.5.0` (highest version compatible with Ruby 1.8.7)
-    * For the current version, it requires that your Ruby installation should have a static runtime library before this gem's installation. Go to the folder `<Your_Ruby_Path>/lib`, and check if there exists the required file which has a name like `lib<Platform>-ruby<Version_Number>-static.a`. Especially note the word `static` in the filename; the file named `lib<Platform>-ruby<Version_Number>-dll.a` is for dynamic linking and therefore NOT useful. If this is not the case, you can
-      * Compile a static Ruby library on your own. If I have time, I may work on adding some guidance in this project in the future.
-      * Visit RubyInstaller's [archived versions here](https://github.com/oneclick/rubyinstaller/releases) (Note: Not "RubyInstaller2" where they dropped the static library distribution) or [a clearer list here](https://rubyinstaller.org/downloads/archives/) (but you need to limit to those with version prior to 2.4)
+    * For the current version, it requires that your Ruby installation should have a static runtime library before this gem's installation.
+      * ***Note***: For `Ruby >= 2.4` installed by RubyInstaller, it does NOT come with a static Ruby library. To be sure:
+      * Go to the folder `<Your_Ruby_Path>/lib`, and check if there exists the required file which has a name like `lib<Platform>-ruby<Version_Number>-static.a`. Especially note the word `static` in the filename; the file named `lib<Platform>-ruby<Version_Number>-dll.a` is for dynamic linking and therefore NOT useful.
+      * If this is not the case, you can
+        * Compile a static Ruby library on your own. If I have time, I may work on adding some guidance in this project in the future.
+        * Visit RubyInstaller's [archived versions here](https://github.com/oneclick/rubyinstaller/releases) (Note: Not "RubyInstaller2" where they dropped the static library distribution) or [a clearer list here](https://rubyinstaller.org/downloads/archives/) (but you need to limit to those with version prior to 2.4)
 
-1. install RubyInstaller's DevKit
+1. Install RubyInstaller's DevKit
 
-    * Refer to [RubyInstaller's wiki page](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit/25db58138bb49410ef9d7b695dbd1e8384b47871) on how to add the DevKit to your Ruby installation
-    <details><summary>TL;DR</summary>
-    
+    * Below summarizes the whole process. For more information, please refer to [RubyInstaller's wiki page](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit/25db58138bb49410ef9d7b695dbd1e8384b47871).
     * Download the latest 32-bit (for 32-bit Ruby) or 64-bit (for 64-bit Ruby) [Devkit here](https://github.com/oneclick/rubyinstaller/releases/tag/devkit-4.7.2)
       * Note: This is the 'legacy' MSYS devkit (not the MSYS2 one in the RubyInstaller2 repo)
     * Extract and `cd` to that folder
@@ -27,9 +28,10 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
         ruby dk.rb install
         ruby -e "require 'devkit'; puts ENV['RI_DEVKIT']"	REM :Test, ensure the path is %DEVKITPATH%  
         ```
-    </details>
 
-2. install gem from local
+        ***Note***: For 64-bit Ruby, it is likely that `dk init` won't find the Ruby path successfully. In such a case, manually add a line in `config.yml`: e.g., `- C:/Ruby23-x64`
+
+2. Install gem from local
 
     ```bat
     git clone https://github.com/Z-H-Sun/exerb-mingw.git
@@ -47,7 +49,7 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
       </details>
 
     * If you don't have `git`, it is also OK to [download the current snapshot here](https://github.com/Z-H-Sun/exerb-mingw/archive/refs/heads/master.zip) and extract from the archive instead
-    * If you just want to compile the C codes into binaries only without (re-)installing, instead of `gem install ...`, go to the gem installation path and run `rake generate`. This is useful when you have already installed the gem (i.e., the Ruby scripts, `exerb` and `mkexy` and those in the `lib` folder, have been copied to the Ruby path), and you, as a developer, want to change the C codes and update the binaries `data/exerb/*.{exc,dll}`
+    * If you just want to compile the C codes into binaries only without (re-)installing, instead of `gem install ...`, go to the gem installation path (`C:\Ruby*\lib\ruby\gems\*\gems\exerb*`) and run `rake generate`. This is useful when you have already installed the gem (i.e., the Ruby scripts, `exerb` and `mkexy` and those in the `lib` folder, have been copied to the Ruby path), and you, as a developer, want to change the C codes and update the binaries `data/exerb/*.{exc,dll}`
 
 ## Updates and Known Bugs
 
@@ -62,7 +64,7 @@ Packaged ruby source files and required other (*.rb *.so *.dll) to a .exe file.
   * Currently, the default 'external' encoding is set to be the same as 'locale' encoding, but it can be different from the script-defined encoding (defined on the first line or the line after shebang). The script-defined encoding will take effect when you create any new string object, but file reading/writing will still be in the 'locale' encoding. An easy workaround is to add an additional line at the beginning of your Ruby script: `Encoding.default_external = __ENCODING__`
   </details>
 
-* Now compatible with 64-bit Ruby. However, the generated 64-bit executables cannot dynamically load libraries (e.g., `Win32API.new(...)`), which will cause Segmentation Fault. There are likely more differences between 32-bit and 64-bit images that need further attention.
+* Now compatible with 64-bit Ruby. ~~However, the generated 64-bit executables cannot dynamically load libraries (e.g., `Win32API.new(...)`), which will cause Segmentation Fault. There are likely more differences between 32-bit and 64-bit images that need further attention.~~ *I'm happy to announce that the segfault issue is also resolved!*
 * The RT (run-time) cores won't work for Ruby >= 1.9; don't use them (This is because `Rakefile` fails to map correct exports of the exerb runtime DLL; in the future, `dumpbin` might be worth trying although it is proprietary?)
 * Not yet tested with Ruby >= 2.4. (RubyInstaller stopped providing the static library; I have not yet tried compiling it manually)
 * Summary of undocumented features since Exerb 5.4

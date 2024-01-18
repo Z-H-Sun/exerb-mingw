@@ -26,7 +26,7 @@ typedef struct {
 } LOADED_LIBRARY_ENTRY;
 
 typedef struct {
-	DWORD base_of_file;
+	uintptr_t base_of_file;
 	IMAGE_DOS_HEADER *dos_header;
 	IMAGE_NT_HEADERS *nt_headers;
 	IMAGE_SECTION_HEADER *section;
@@ -99,7 +99,7 @@ static void exerb_replace_import_dll_name(IMPORT_TABLE_INFO *info, const char *s
 static int exerb_get_import_table_info(const char *base_of_file, IMPORT_TABLE_INFO *info);
 static IMAGE_SECTION_HEADER* exerb_get_enclosing_section_header(const IMAGE_NT_HEADERS *nt_headers, const DWORD rva);
 static void exerb_call_initialize_function(const HMODULE handle, const char *filepath);
-static int exerb_find_resource(const DWORD base_of_image, const int type, const int id, DWORD *base_of_item, DWORD *size_of_item);
+static int exerb_find_resource(const uintptr_t base_of_image, const int type, const int id, uintptr_t *base_of_item, DWORD *size_of_item);
 
 static void exerb_replace_import_function(const HMODULE module);
 static int exerb_replace_import_function_thunk(const HMODULE module, const FARPROC src_proc, const FARPROC new_proc);
@@ -127,7 +127,7 @@ exerb_main(int argc, char** argv, void (*on_init)(VALUE, VALUE, VALUE), void (*o
 	exerb_set_script_name((char *)"exerb");
 
 	int state = 0, result_code = 0;
-	rb_protect(exerb_main_in_protect, UINT2NUM((DWORD)on_init), &state);
+	rb_protect(exerb_main_in_protect, SIZET2NUM((uintptr_t)on_init), &state);
 
 	if ( state ) {
 #ifdef RUBY19
@@ -154,7 +154,7 @@ exerb_main_in_protect(VALUE on_init_proc)
 {
 	Init_ExerbRuntime();
 
-	void (*on_init)(VALUE, VALUE, VALUE) = (void(*)(VALUE, VALUE, VALUE))NUM2UINT(on_init_proc);
+	void (*on_init)(VALUE, VALUE, VALUE) = (void(*)(VALUE, VALUE, VALUE))NUM2SIZET(on_init_proc);
 	if ( on_init ) on_init(rb_stdin, rb_stdout, rb_stderr);
 
         /* Hack require */
@@ -171,8 +171,8 @@ exerb_main_in_protect(VALUE on_init_proc)
 static void
 exerb_mapping()
 {
-	const DWORD base_of_image = (DWORD)GetModuleHandle(NULL);
-	DWORD base_of_archive = 0, size_of_archive = 0;
+	const uintptr_t base_of_image = (uintptr_t)GetModuleHandle(NULL);
+	uintptr_t base_of_archive = 0; DWORD size_of_archive = 0;
 	if ( !exerb_find_resource(base_of_image, RT_EXERB, ID_EXERB, &base_of_archive, &size_of_archive) ) {
 		rb_raise(rb_eExerbRuntimeError, "The executable hasn't an archive.");
 	}
@@ -631,7 +631,7 @@ exerb_replace_import_dll(const char *base_of_file)
 static void
 exerb_replace_import_dll_name(IMPORT_TABLE_INFO *info, const char *src_name, const char* new_name)
 {
-	const DWORD base_of_name = info->base_of_file - info->delta_of_import_table;
+	const uintptr_t base_of_name = info->base_of_file - info->delta_of_import_table;
 	const DWORD size_of_new_name = strlen(new_name);
         FILE_ENTRY_HEADER *file_entry;
 
@@ -680,10 +680,10 @@ exerb_replace_import_dll_name(IMPORT_TABLE_INFO *info, const char *src_name, con
 static int
 exerb_get_import_table_info(const char *base_of_file, IMPORT_TABLE_INFO *info)
 {
-	info->base_of_file = (DWORD)base_of_file;
+	info->base_of_file = (uintptr_t)base_of_file;
 	info->dos_header   = (IMAGE_DOS_HEADER*)info->base_of_file;
 	info->nt_headers   = (IMAGE_NT_HEADERS*)(info->base_of_file + info->dos_header->e_lfanew);
-	
+	// RVA (relative address) is DWORD, no need to change to uintptr_t
 	const DWORD rva_of_import_table = info->nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
 
 	info->section = exerb_get_enclosing_section_header(info->nt_headers, rva_of_import_table);
@@ -737,12 +737,12 @@ exerb_call_initialize_function(const HMODULE handle, const char *filepath)
 }
 
 static int
-exerb_find_resource(const DWORD base_of_image, const int type, const int id, DWORD *base_of_item, DWORD *size_of_item)
+exerb_find_resource(const uintptr_t base_of_image, const int type, const int id, uintptr_t *base_of_item, DWORD *size_of_item)
 {
 	const IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER*)base_of_image;
 	const IMAGE_NT_HEADERS *nt_headers = (IMAGE_NT_HEADERS*)(base_of_image + dos_header->e_lfanew);
 
-	const DWORD base_of_resource = base_of_image + nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].VirtualAddress;
+	const uintptr_t base_of_resource = base_of_image + nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].VirtualAddress;
 	if ( base_of_resource == base_of_image ) return 0;
 
 	const IMAGE_RESOURCE_DIRECTORY       *root_dir     = (IMAGE_RESOURCE_DIRECTORY*)base_of_resource;
@@ -804,20 +804,20 @@ exerb_replace_import_function(const HMODULE module)
 static int
 exerb_replace_import_function_thunk(const HMODULE module, const FARPROC src_proc, const FARPROC new_proc)
 {
-	const DWORD base_of_image = (DWORD)module;
+	const uintptr_t base_of_image = (uintptr_t)module;
 	const IMAGE_DOS_HEADER *dos_header = (IMAGE_DOS_HEADER*)base_of_image;
 	const IMAGE_NT_HEADERS *nt_headers = (IMAGE_NT_HEADERS*)(base_of_image + dos_header->e_lfanew);
 
-	const DWORD base_of_import = base_of_image + nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+	const uintptr_t base_of_import = base_of_image + nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
 	if ( base_of_import == base_of_image ) return 0;
 
 	for ( IMAGE_IMPORT_DESCRIPTOR *desc = (IMAGE_IMPORT_DESCRIPTOR*)base_of_import; desc->Name; desc++ ) {
-		for ( DWORD *thunk = (DWORD*)(base_of_image + desc->FirstThunk); *thunk; thunk++ ) {
-			if ( *thunk == (DWORD)src_proc ) {
+		for ( uintptr_t *thunk = (uintptr_t*)(base_of_image + desc->FirstThunk); *thunk; thunk++ ) {
+			if ( *thunk == (uintptr_t)src_proc ) {
 				DWORD protect = 0, dummy = 0;
-				VirtualProtect(thunk, sizeof(DWORD), PAGE_READWRITE, &protect);
-				*thunk = (DWORD)new_proc;
-				VirtualProtect(thunk, sizeof(DWORD), protect, &dummy);
+				VirtualProtect(thunk, sizeof(uintptr_t), PAGE_READWRITE, &protect);
+				*thunk = (uintptr_t)new_proc;
+				VirtualProtect(thunk, sizeof(uintptr_t), protect, &dummy);
 				return 1;
 			}
 		}

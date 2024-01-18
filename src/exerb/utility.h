@@ -5,6 +5,28 @@
 
 #include <windows.h>
 
+//////////
+// deal with pointer-sized integers
+#include <stdint.h> // DWORD -> uintptr_t
+// use Ruby defined macro definitions
+#if !defined(NUM2SIZET) // NUM2UINT -> NUM2SIZET
+# if defined(HAVE_LONG_LONG) && SIZEOF_SIZE_T > SIZEOF_LONG
+#  define NUM2SIZET(x) ((size_t)NUM2ULL(x))
+# else
+#  define NUM2SIZET(x) NUM2ULONG(x)
+# endif
+#endif
+#if !defined(SIZET2NUM) // INT2NUM -> SIZET2NUM
+# if defined(HAVE_LONG_LONG) && SIZEOF_SIZE_T > SIZEOF_LONG
+#  define SIZET2NUM(v) ULL2NUM(v)
+# elif SIZEOF_SIZE_T == SIZEOF_LONG
+#  define SIZET2NUM(v) ULONG2NUM(v)
+# else
+#  define SIZET2NUM(v) UINT2NUM(v)
+# endif
+#endif
+//////////
+
 char* exerb_strdup(const char* str);
 HANDLE exerb_fopen_for_read(const char *filepath);
 HANDLE exerb_fopen_for_write(const char *filepath);

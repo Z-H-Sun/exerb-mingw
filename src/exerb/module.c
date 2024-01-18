@@ -112,11 +112,11 @@ rb_exerbruntime_s_open(VALUE self, VALUE filename)
 static VALUE
 rb_exerbruntime_s_load_string(VALUE self, VALUE id)
 {
-	LPCSTR res_id = exerb_convert_resource_id(id);
+	UINT res_id = FIX2INT(id); // unlike LoadIcon or LoadCursor where `res_id` can be either char* or int, `res_id` must be UINT here!
 	char buffer[512] = "";
 
 	for ( int i = 0; i < g_loaded_resource_count; i++ ) {
-		if ( LoadString(g_loaded_resource_table[i], (unsigned int)res_id, buffer, sizeof(buffer)) ) {
+		if ( LoadString(g_loaded_resource_table[i], res_id, buffer, sizeof(buffer)) ) {
 			return rb_str_new2(buffer);
 		}
 	}
@@ -131,7 +131,7 @@ rb_exerbruntime_s_load_icon(VALUE self, VALUE id)
 
 	for ( int i = 0; i < g_loaded_resource_count; i++ ) {
 		HICON icon = LoadIcon(g_loaded_resource_table[i], res_id);
-		if ( icon ) return INT2NUM((int)icon);
+		if ( icon ) return SIZET2NUM((uintptr_t)icon);
 	}
 
 	return Qnil;
@@ -144,7 +144,7 @@ rb_exerbruntime_s_load_cursor(VALUE self, VALUE id)
 
 	for ( int i = 0; i < g_loaded_resource_count; i++ ) {
 		HCURSOR icon = LoadCursor(g_loaded_resource_table[i], res_id);
-		if ( icon ) return INT2NUM((int)icon);
+		if ( icon ) return SIZET2NUM((uintptr_t)icon);
 	}
 
 	return Qnil;
